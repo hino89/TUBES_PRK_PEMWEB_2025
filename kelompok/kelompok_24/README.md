@@ -1,5 +1,5 @@
 ### Judul Project : 
-Sistem POS - 
+Sistem POS - WarkOps – Sistem Point of Sale (POS) Terintegrasi untuk Manajemen Operasional Warkop Berbasis Web
 
 ### Anggota kelompok : 
 

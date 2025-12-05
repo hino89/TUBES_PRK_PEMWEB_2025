@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WarkOps // System Access</title>
+
+    <!-- 1. Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;600;800&family=Montserrat:wght@900&display=swap" rel="stylesheet">
+
+    <!-- 2. Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 3. WarkOps Custom Config (HARUS DI BAWAH CDN) -->
+    <script src="js/theme.js"></script>
+
+    <style>
+        /* Custom Styles yang susah dibuat pakai utility class */
+        
+        /* 1. Efek Cut Corner (Sudut terpotong ala Sci-Fi) */
+        .clip-cut-corner {
+            clip-path: polygon(
+                0 0, 
+                100% 0, 
+                100% calc(100% - 20px), 
+                calc(100% - 20px) 100%, 
+                0 100%
+            );
+        }
+
+        .clip-button {
+            clip-path: polygon(
+                10px 0, 100% 0, 
+                100% calc(100% - 10px), 
+                calc(100% - 10px) 100%, 
+                0 100%, 0 10px
+            );
+        }
+
+        /* 2. Efek Scanline (Garis monitor tabung) */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+        
+        /* 3. Efek Glitch Text saat hover */
+        .glitch-hover:hover {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            color: #f43f5e;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+    </style>
+</head>
+<body class="bg-warkops-bg text-warkops-text h-screen w-screen overflow-hidden relative font-sans selection:bg-warkops-primary selection:text-black">
+
+    <!-- === BACKGROUND LAYER === -->
+    <!-- Seigaiha Pattern (Base Texture) -->
+    <div class="absolute inset-0 bg-seigaiha z-0"></div>
+    <!-- Dot Matrix Overlay (Tech feel) -->
+    <div class="absolute inset-0 bg-dots z-0 mix-blend-overlay"></div>
+    <!-- CRT Scanlines -->
+    <div class="scanlines"></div>
+
+    <!-- Decorative Big Text (Background) -->
+    <div class="absolute top-0 left-0 p-8 opacity-10 select-none z-0 pointer-events-none">
+        <h1 class="text-[12rem] font-black font-display leading-none tracking-tighter text-white">WARK<br>OPS.</h1>
+    </div>
+    
+    <!-- Decorative Circle (Orbit) -->
+    <div class="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] border border-warkops-muted/20 rounded-full animate-spin-slow z-0 border-dashed"></div>
+
+    <!-- === MAIN LOGIN CONTAINER === -->
+    <div class="relative z-10 flex items-center justify-center h-full">
+        
+        <!-- The Card -->
+        <div class="w-full max-w-md bg-warkops-panel border-l-4 border-warkops-primary shadow-2xl relative p-1">
+            
+            <!-- Decorative Header Bar -->
+            <div class="absolute -top-6 left-0 flex items-center gap-2">
+                <div class="bg-warkops-primary text-black text-xs font-bold px-2 py-1 font-mono">SYS.VER.1.0</div>
+                <div class="bg-warkops-accent text-black text-xs font-bold px-2 py-1 font-mono">UNAUTHORIZED</div>
+            </div>
+
+            <!-- Inner Content Box -->
+            <div class="bg-warkops-bg/50 backdrop-blur-sm p-8 clip-cut-corner border border-white/5">
+                
+                <!-- Logo & Title -->
+                <div class="mb-10">
+                    <h2 class="text-4xl font-display font-black tracking-tight text-white mb-1">
+                        WARK<span class="text-warkops-primary">OPS</span>
+                    </h2>
+                    <div class="flex items-center gap-2 text-warkops-muted text-xs font-mono tracking-widest uppercase">
+                        <span class="w-2 h-2 bg-warkops-success rounded-full animate-pulse"></span>
+                        System Online // Bandar Lampung
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <form action="#" onsubmit="handleLogin(event)" class="space-y-6">
+                    
+                    <!-- Username Input -->
+                    <div class="group">
+                        <label class="block text-xs font-mono text-warkops-secondary mb-2 tracking-wider">OPERATOR_ID</label>
+                        <div class="relative">
+                            <input type="text" 
+                                class="w-full bg-warkops-surface/50 border-b-2 border-warkops-muted focus:border-warkops-primary text-white p-3 font-mono text-sm focus:outline-none transition-all placeholder-white/20"
+                                placeholder="ENTER ID // e.g. KASIR_01"
+                            >
+                            <!-- Decorative Corner on Input -->
+                            <div class="absolute top-0 right-0 w-2 h-2 border-t border-r border-warkops-muted group-focus-within:border-warkops-primary"></div>
+                        </div>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="group">
+                        <label class="block text-xs font-mono text-warkops-secondary mb-2 tracking-wider">ACCESS_KEY</label>
+                        <div class="relative">
+                            <input type="password" 
+                                class="w-full bg-warkops-surface/50 border-b-2 border-warkops-muted focus:border-warkops-primary text-white p-3 font-mono text-sm focus:outline-none transition-all placeholder-white/20"
+                                placeholder="••••••••"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-4">
+                        <button type="submit" class="w-full bg-warkops-primary hover:bg-white hover:text-warkops-primary text-black font-bold py-4 uppercase tracking-[0.2em] font-mono clip-button transition-all relative overflow-hidden group">
+                            <span class="relative z-10">Initialize Session</span>
+                            <!-- Hover Effect Background -->
+                            <div class="absolute inset-0 bg-white transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 z-0"></div>
+                        </button>
+                    </div>
+
+                </form>
+
+                <!-- Footer / Copyright -->
+                <div class="mt-8 pt-4 border-t border-white/5 flex justify-between items-end text-[10px] text-warkops-muted font-mono leading-tight">
+                    <div>
+                        <p>LABORATORIUM TEKNIK KOMPUTER</p>
+                        <p>UNIVERSITAS LAMPUNG</p>
+                    </div>
+                    <div class="text-right">
+                        <p>SECURE CONNECTION</p>
+                        <p class="text-warkops-accent">ENCRYPTED // TLS 1.3</p>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- Decorative Side Elements -->
+            <div class="absolute -right-3 top-10 flex flex-col gap-1">
+                <div class="w-1 h-8 bg-warkops-muted/30"></div>
+                <div class="w-1 h-8 bg-warkops-muted/30"></div>
+                <div class="w-1 h-8 bg-warkops-primary animate-pulse"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- JS Logic -->
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            // Simple animation before redirect
+            const btn = e.target.querySelector('button');
+            btn.innerHTML = "AUTHENTICATING...";
+            btn.classList.add('bg-warkops-accent');
+            
+            setTimeout(() => {
+                // Redirect logic would go here
+                window.location.href = 'dashboard.html';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

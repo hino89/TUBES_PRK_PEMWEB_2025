@@ -1,0 +1,81 @@
+<!-- Ini adalah konten yang akan di-load ke dalam div #content dashboard.html -->
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    
+    <!-- Stat Card 1 -->
+    <div class="bg-warkops-panel border border-white/5 p-5 relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 bg-warkops-primary/10 w-24 h-24 rounded-full group-hover:bg-warkops-primary/20 transition-colors"></div>
+        <div class="relative z-10">
+            <div class="text-[10px] font-mono text-warkops-muted uppercase tracking-widest mb-1">Total Sales</div>
+            <div class="text-3xl font-display font-black text-white">Rp 2.4jt</div>
+            <div class="text-xs text-warkops-success mt-2 flex items-center gap-1 font-mono">
+                <span>▲ 12%</span> <span class="text-warkops-muted">vs yesterday</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stat Card 2 -->
+    <div class="bg-warkops-panel border border-white/5 p-5 relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 bg-warkops-secondary/10 w-24 h-24 rounded-full group-hover:bg-warkops-secondary/20 transition-colors"></div>
+        <div class="relative z-10">
+            <div class="text-[10px] font-mono text-warkops-muted uppercase tracking-widest mb-1">Orders</div>
+            <div class="text-3xl font-display font-black text-white">48</div>
+            <div class="text-xs text-warkops-secondary mt-2 flex items-center gap-1 font-mono">
+                <span>● Active</span> <span class="text-warkops-muted">processing now</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Recent Activity / Chart Area -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Main Chart -->
+    <div class="lg:col-span-2 bg-warkops-panel border border-white/5 p-6 min-h-[300px] flex flex-col">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-display font-bold text-white tracking-tight">REVENUE ANALYTICS</h3>
+            <button class="text-[10px] bg-white/5 hover:bg-white/10 px-3 py-1 text-white font-mono border border-white/10">WEEKLY VIEW</button>
+        </div>
+        
+        <!-- Placeholder Grafik -->
+        <div class="flex-1 flex items-end gap-4 px-4 pb-4 border-b border-l border-white/10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiIHN0cm9rZS13aWR0aD0iMSI+PHBhdGggZD0iTTAgMjBoMjBWMEgwIi8+PC9zdmc+')]">
+            <div class="w-full bg-warkops-primary/20 h-[40%] relative group cursor-pointer hover:bg-warkops-primary/40 transition-all">
+                <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100 bg-black px-1">40%</div>
+            </div>
+            <div class="w-full bg-warkops-primary/30 h-[60%] relative group cursor-pointer hover:bg-warkops-primary/50 transition-all"></div>
+            <div class="w-full bg-warkops-primary/50 h-[80%] relative group cursor-pointer hover:bg-warkops-primary/70 transition-all"></div>
+            <div class="w-full bg-warkops-primary/40 h-[50%] relative group cursor-pointer hover:bg-warkops-primary/60 transition-all"></div>
+            <div class="w-full bg-warkops-primary/20 h-[30%] relative group cursor-pointer hover:bg-warkops-primary/40 transition-all"></div>
+            <div class="w-full bg-warkops-primary h-[90%] relative group cursor-pointer hover:bg-white transition-all shadow-[0_0_15px_rgba(244,63,94,0.5)]"></div>
+            <div class="w-full bg-warkops-primary/60 h-[70%] relative group cursor-pointer hover:bg-warkops-primary/80 transition-all"></div>
+        </div>
+    </div>
+
+    <!-- Side List -->
+    <div class="bg-warkops-panel border border-white/5 p-6">
+        <h3 class="font-display font-bold text-white tracking-tight mb-4">POPULAR ITEMS</h3>
+        <div class="space-y-4">
+            
+            <div class="flex items-center gap-3 pb-3 border-b border-white/5">
+                <div class="w-10 h-10 bg-white/5 flex items-center justify-center text-lg">☕</div>
+                <div class="flex-1">
+                    <div class="text-sm font-bold text-white">Kopi Susu Gula Aren</div>
+                    <div class="text-[10px] text-warkops-muted">240 Sold today</div>
+                </div>
+                <div class="text-warkops-success font-mono text-xs">+12%</div>
+            </div>
+
+            <div class="flex items-center gap-3 pb-3 border-b border-white/5">
+                <div class="w-10 h-10 bg-white/5 flex items-center justify-center text-lg">🍜</div>
+                <div class="flex-1">
+                    <div class="text-sm font-bold text-white">Indomie Telur Kornet</div>
+                    <div class="text-[10px] text-warkops-muted">180 Sold today</div>
+                </div>
+                <div class="text-warkops-accent font-mono text-xs">0%</div>
+            </div>
+
+        </div>
+    </div>
+
+</div>

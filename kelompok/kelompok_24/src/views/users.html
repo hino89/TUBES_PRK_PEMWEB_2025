@@ -1,3 +1,5 @@
+<!-- src/views/users.html -->
+
 <div class="p-6 w-full h-full text-warkops-text font-sans">
 
     <!-- Header -->
@@ -9,18 +11,18 @@
             Manage staff operators, roles, and access levels.
         </p>
 
-        <!-- Decorative retro element -->
+        <!-- Decorative retro elements -->
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-seigaiha opacity-20"></div>
     </div>
 
-    <!-- Add Button -->
+    <!-- Add User -->
     <button
         onclick="openAddUserModal()"
         class="px-4 py-2 mb-4 rounded-lg bg-warkops-primary text-warkops-dark font-bold shadow hover:opacity-90 transition">
         + Add Operator
     </button>
 
-    <!-- Table -->
+    <!-- Table Container -->
     <div class="bg-warkops-panel rounded-xl p-4 shadow-lg border border-warkops-surface">
         <table class="w-full text-left text-sm">
             <thead class="border-b border-warkops-surface text-warkops-muted">
@@ -37,12 +39,13 @@
     </div>
 </div>
 
-<!-- Modal -->
+<!-- MODAL -->
 <div id="userModal"
      class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
 
     <div class="bg-warkops-panel p-6 rounded-xl w-96 border border-warkops-primary shadow-xl relative">
 
+        <!-- Decorative pattern -->
         <div class="absolute top-2 right-2 w-14 h-14 bg-stripes opacity-20"></div>
 
         <h2 id="modalTitle" class="text-xl font-display mb-4 text-warkops-primary"></h2>
@@ -81,114 +84,3 @@
         </div>
     </div>
 </div>
-
-<!-- === INLINE SCRIPT USERS.JS === -->
-<script>
-/** User Data */
-let users = [
-  { id: 1, name: "Amiya", email: "amiya@rhodes.com", role: "Admin", status: "Active" },
-  { id: 2, name: "Texas", email: "texas@penguin.com", role: "Staff", status: "Inactive" },
-];
-
-let editingUser = null;
-
-/** Render Table */
-function renderUsers() {
-  const tbody = document.getElementById("userTable");
-  tbody.innerHTML = "";
-
-  users.forEach(u => {
-    tbody.innerHTML += `
-      <tr class="border-b border-warkops-surface hover:bg-warkops-surface/40 transition">
-        <td class="py-2">${u.name}</td>
-        <td class="py-2">${u.email}</td>
-        <td class="py-2">${u.role}</td>
-        <td class="py-2">
-            <span class="px-2 py-1 text-xs rounded
-                ${u.status === "Active" ? "bg-warkops-success text-black" : "bg-warkops-muted text-warkops-dark"}">
-                ${u.status}
-            </span>
-        </td>
-
-        <td class="py-2 text-right">
-          <button onclick="editUser(${u.id})"
-                  class="text-warkops-secondary hover:underline mr-3">
-              Edit
-          </button>
-
-          <button onclick="deleteUser(${u.id})"
-                  class="text-warkops-primary hover:underline">
-              Delete
-          </button>
-        </td>
-      </tr>
-    `;
-  });
-}
-
-renderUsers();
-
-/** Open Modal */
-function openAddUserModal() {
-  editingUser = null;
-
-  document.getElementById("modalTitle").innerText = "Add New Operator";
-  document.getElementById("nameInput").value = "";
-  document.getElementById("emailInput").value = "";
-  document.getElementById("roleInput").value = "Staff";
-  document.getElementById("statusInput").value = "Active";
-
-  document.getElementById("userModal").classList.remove("hidden");
-}
-
-/** Close Modal */
-function closeModal() {
-  document.getElementById("userModal").classList.add("hidden");
-}
-
-/** Edit */
-function editUser(id) {
-  editingUser = id;
-  const u = users.find(u => u.id === id);
-
-  document.getElementById("modalTitle").innerText = "Edit Operator";
-  document.getElementById("nameInput").value = u.name;
-  document.getElementById("emailInput").value = u.email;
-  document.getElementById("roleInput").value = u.role;
-  document.getElementById("statusInput").value = u.status;
-
-  document.getElementById("userModal").classList.remove("hidden");
-}
-
-/** Save (Add / Edit) */
-function saveUser() {
-  const name = document.getElementById("nameInput").value;
-  const email = document.getElementById("emailInput").value;
-  const role = document.getElementById("roleInput").value;
-  const status = document.getElementById("statusInput").value;
-
-  if (editingUser === null) {
-    // Add New
-    users.push({
-      id: Date.now(),
-      name, email, role, status
-    });
-  } else {
-    // Update Existing
-    const u = users.find(u => u.id === editingUser);
-    u.name = name;
-    u.email = email;
-    u.role = role;
-    u.status = status;
-  }
-
-  closeModal();
-  renderUsers();
-}
-
-/** Delete */
-function deleteUser(id) {
-  users = users.filter(u => u.id !== id);
-  renderUsers();
-}
-</script>

@@ -27,6 +27,11 @@ const routes = {
         view: 'views/reports.html', 
         title: 'ANALYTICS & REPORTS',
         init: null
+    },
+    'users': { 
+        view: 'views/users.html', 
+        title: 'OPERATOR ACCESS CONTROL', // Judul halaman yang lebih "Tech"
+        init: null // Nanti diisi function loadUsers() dari users.js
     }
 };
 

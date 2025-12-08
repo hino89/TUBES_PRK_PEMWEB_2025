@@ -1,1 +1,212 @@
 <!-- src/views/inventory.html -->
+
+<div class="space-y-8">
+
+	<section class="relative bg-gradient-to-r from-warkops-panel via-black to-warkops-panel border border-white/5 overflow-hidden">
+		<div class="absolute inset-0 bg-seigaiha opacity-10"></div>
+		<div class="relative px-6 py-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+			<div>
+				<p class="text-[10px] font-mono uppercase tracking-[0.4em] text-warkops-muted">Inventory Module</p>
+				<h2 class="text-3xl font-display font-black tracking-tight text-white">MENU • BAHAN • RESEP</h2>
+				<p class="text-sm text-warkops-muted max-w-2xl mt-2">Panel persediaan ala papan pengumuman stasiun Higashi: pantau menu siap jual, stok bahan mentah, dan resep signature dalam satu layar retro-tech.</p>
+			</div>
+			<div class="grid grid-cols-2 gap-4 text-center">
+				<div class="bg-white/5 border border-white/10 px-4 py-3">
+					<div class="text-[10px] font-mono text-warkops-muted">Bahan Aktif</div>
+					<div class="text-2xl font-display font-bold text-warkops-secondary">32</div>
+				</div>
+				<div class="bg-white/5 border border-white/10 px-4 py-3">
+					<div class="text-[10px] font-mono text-warkops-muted">Menu Ready</div>
+					<div class="text-2xl font-display font-bold text-warkops-primary">18</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="bg-warkops-panel border border-white/5 p-4 flex flex-wrap items-center gap-4">
+		<div class="flex items-center gap-3">
+			<span class="text-[10px] font-mono text-warkops-muted uppercase">Filter</span>
+			<button class="px-3 py-1 border border-white/10 text-xs text-white bg-white/5 hover:border-warkops-primary/60 hover:text-warkops-primary transition">All</button>
+			<button class="px-3 py-1 border border-white/10 text-xs text-white/70 hover:border-warkops-secondary/60 hover:text-warkops-secondary transition">Makanan</button>
+			<button class="px-3 py-1 border border-white/10 text-xs text-white/70 hover:border-warkops-secondary/60 hover:text-warkops-secondary transition">Minuman</button>
+		</div>
+		<div class="flex items-center gap-3">
+			<span class="text-[10px] font-mono text-warkops-muted uppercase">Status</span>
+			<span class="text-xs font-mono bg-white/5 border border-warkops-success/30 text-warkops-success px-3 py-1">Stok Aman</span>
+			<span class="text-xs font-mono bg-white/5 border border-warkops-accent/30 text-warkops-accent px-3 py-1">Perlu Restock</span>
+		</div>
+	</section>
+
+	<section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+		<article class="bg-warkops-panel border border-white/5 p-4 flex flex-col">
+			<div class="flex items-center justify-between mb-4">
+				<div>
+					<p class="text-[10px] font-mono text-warkops-muted uppercase tracking-[0.3em]">Menu Line</p>
+					<h3 class="text-xl font-display font-bold text-white">Daftar Menu</h3>
+				</div>
+				<span class="text-[10px] font-mono text-warkops-primary">UPDATED 12:04</span>
+			</div>
+			<div class="overflow-x-auto">
+				<table class="min-w-full text-sm font-mono">
+					<thead class="text-[10px] uppercase text-warkops-muted border-b border-white/5">
+						<tr>
+							<th class="py-2 text-left">Menu</th>
+							<th class="py-2 text-left">Kategori</th>
+							<th class="py-2 text-right">Harga</th>
+							<th class="py-2 text-right">Status</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-white/5 text-white/90">
+						<tr class="hover:bg-white/5">
+							<td class="py-3">
+								<div class="font-bold">Kopi Susu Momo</div>
+								<div class="text-[10px] text-warkops-muted">Signature Pink Foam</div>
+							</td>
+							<td class="py-3">Minuman</td>
+							<td class="py-3 text-right">Rp 24.000</td>
+							<td class="py-3 text-right text-warkops-success">Ready</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3">
+								<div class="font-bold">Roti Bakar Higashi</div>
+								<div class="text-[10px] text-warkops-muted">Keju • Corned</div>
+							</td>
+							<td class="py-3">Snack</td>
+							<td class="py-3 text-right">Rp 18.000</td>
+							<td class="py-3 text-right text-warkops-accent">Restock</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3">
+								<div class="font-bold">Nasi Gyudon Retro</div>
+								<div class="text-[10px] text-warkops-muted">Extra Onsen Egg</div>
+							</td>
+							<td class="py-3">Makanan</td>
+							<td class="py-3 text-right">Rp 32.000</td>
+							<td class="py-3 text-right text-warkops-success">Ready</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3">
+								<div class="font-bold">Sakura Soda</div>
+								<div class="text-[10px] text-warkops-muted">Lychee • Yuzu</div>
+							</td>
+							<td class="py-3">Minuman</td>
+							<td class="py-3 text-right">Rp 22.000</td>
+							<td class="py-3 text-right text-warkops-secondary">Prep</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</article>
+
+		<article class="bg-warkops-panel border border-white/5 p-4 flex flex-col">
+			<div class="flex items-center justify-between mb-4">
+				<div>
+					<p class="text-[10px] font-mono text-warkops-muted uppercase tracking-[0.3em]">Stockyard</p>
+					<h3 class="text-xl font-display font-bold text-white">Bahan Mentah</h3>
+				</div>
+				<span class="text-[10px] font-mono text-warkops-secondary">SCAN 09:57</span>
+			</div>
+			<div class="overflow-x-auto">
+				<table class="min-w-full text-sm font-mono">
+					<thead class="text-[10px] uppercase text-warkops-muted border-b border-white/5">
+						<tr>
+							<th class="py-2 text-left">Item</th>
+							<th class="py-2 text-left">Supplier</th>
+							<th class="py-2 text-right">Qty</th>
+							<th class="py-2 text-right">Status</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-white/5 text-white/90">
+						<tr class="hover:bg-white/5">
+							<td class="py-3">
+								<div class="font-bold">Beans Arabica 90s Roast</div>
+								<div class="text-[10px] text-warkops-muted">Lot #AK-221</div>
+							</td>
+							<td class="py-3">Higashi Roastery</td>
+							<td class="py-3 text-right">6 kg</td>
+							<td class="py-3 text-right text-warkops-success">Aman</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3">
+								<div class="font-bold">Sirup Momo</div>
+								<div class="text-[10px] text-warkops-muted">Batch 12/2025</div>
+							</td>
+							<td class="py-3">Momoka Lab</td>
+							<td class="py-3 text-right">5 botol</td>
+							<td class="py-3 text-right text-warkops-accent">Low</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3">
+								<div class="font-bold">Nori Sheet</div>
+								<div class="text-[10px] text-warkops-muted">Stasiun Kios 04</div>
+							</td>
+							<td class="py-3">Tokyo Mart</td>
+							<td class="py-3 text-right">120 lembar</td>
+							<td class="py-3 text-right text-warkops-success">Aman</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3">
+								<div class="font-bold">Bawang Goreng</div>
+								<div class="text-[10px] text-warkops-muted">Vacuum Pack</div>
+							</td>
+							<td class="py-3">Pasar Permai</td>
+							<td class="py-3 text-right">15 pack</td>
+							<td class="py-3 text-right text-warkops-secondary">QC</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</article>
+
+		<article class="bg-warkops-panel border border-white/5 p-4 flex flex-col">
+			<div class="flex items-center justify-between mb-4">
+				<div>
+					<p class="text-[10px] font-mono text-warkops-muted uppercase tracking-[0.3em]">Lab Notes</p>
+					<h3 class="text-xl font-display font-bold text-white">Blueprint Resep</h3>
+				</div>
+				<span class="text-[10px] font-mono text-warkops-muted">MODE • Revision 03</span>
+			</div>
+			<div class="overflow-x-auto">
+				<table class="min-w-full text-sm font-mono">
+					<thead class="text-[10px] uppercase text-warkops-muted border-b border-white/5">
+						<tr>
+							<th class="py-2 text-left">Resep</th>
+							<th class="py-2 text-left">Komponen</th>
+							<th class="py-2 text-right">Produksi</th>
+							<th class="py-2 text-right">Lead</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-white/5 text-white/90">
+						<tr class="hover:bg-white/5">
+							<td class="py-3 font-bold">Gyudon Retro</td>
+							<td class="py-3 text-xs text-warkops-muted">Sliced Beef, Shoyu tare, Onsen egg, Furikake</td>
+							<td class="py-3 text-right">8 porsi / batch</td>
+							<td class="py-3 text-right text-warkops-success">15 mnt</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3 font-bold">Kopi Susu Momo</td>
+							<td class="py-3 text-xs text-warkops-muted">Momo syrup, double shot, milk foam</td>
+							<td class="py-3 text-right">12 gelas / batch</td>
+							<td class="py-3 text-right text-warkops-secondary">7 mnt</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3 font-bold">Sakura Soda</td>
+							<td class="py-3 text-xs text-warkops-muted">Yuzu base, sparkling water, edible bloom</td>
+							<td class="py-3 text-right">10 gelas / batch</td>
+							<td class="py-3 text-right text-warkops-success">5 mnt</td>
+						</tr>
+						<tr class="hover:bg-white/5">
+							<td class="py-3 font-bold">Roti Bakar Higashi</td>
+							<td class="py-3 text-xs text-warkops-muted">Milk bread, cheddar, corn beef, torched mayo</td>
+							<td class="py-3 text-right">6 porsi / batch</td>
+							<td class="py-3 text-right text-warkops-accent">12 mnt</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</article>
+
+	</section>
+
+</div>

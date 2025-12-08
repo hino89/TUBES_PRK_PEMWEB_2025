@@ -1,1 +1,158 @@
 <!-- src/views/pos.html -->
+
+<div class="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-6 overflow-hidden">
+
+    <!-- === LEFT PANEL: MENU SELECTION === -->
+    <div class="flex-1 flex flex-col min-h-0">
+        
+        <!-- Category Tabs (Tactical Style) -->
+        <div class="flex items-center gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+            <button class="flex-shrink-0 px-6 py-2 bg-warkops-primary text-black font-display font-bold text-sm uppercase skew-x-[-10deg] border border-warkops-primary hover:brightness-110 transition-all">
+                <span class="skew-x-[10deg] block">ALL ITEMS</span>
+            </button>
+            <button class="flex-shrink-0 px-6 py-2 bg-warkops-panel border border-white/10 text-warkops-muted hover:text-white font-mono text-xs uppercase skew-x-[-10deg] hover:border-warkops-secondary transition-all">
+                <span class="skew-x-[10deg] block">SIGNATURE</span>
+            </button>
+            <button class="flex-shrink-0 px-6 py-2 bg-warkops-panel border border-white/10 text-warkops-muted hover:text-white font-mono text-xs uppercase skew-x-[-10deg] hover:border-warkops-secondary transition-all">
+                <span class="skew-x-[10deg] block">COFFEE</span>
+            </button>
+            <button class="flex-shrink-0 px-6 py-2 bg-warkops-panel border border-white/10 text-warkops-muted hover:text-white font-mono text-xs uppercase skew-x-[-10deg] hover:border-warkops-secondary transition-all">
+                <span class="skew-x-[10deg] block">MEALS</span>
+            </button>
+        </div>
+
+        <!-- Menu Grid (Scrollable) -->
+        <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
+            
+            <!-- Item Card 1 -->
+            <div class="group relative bg-warkops-panel border border-white/5 hover:border-warkops-primary/50 transition-all cursor-pointer overflow-hidden flex flex-col h-full">
+                <!-- Decorative Pattern -->
+                <div class="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                    <svg class="w-4 h-4 text-warkops-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/></svg>
+                </div>
+                
+                <div class="p-4 flex-1 flex flex-col justify-end min-h-[120px] bg-gradient-to-t from-black/80 to-transparent">
+                    <div class="text-[10px] text-warkops-secondary font-mono mb-1">BEV-001</div>
+                    <h3 class="font-display font-bold text-white leading-tight">Kopi Susu Momo</h3>
+                    <div class="mt-2 text-warkops-primary font-mono font-bold">Rp 24.000</div>
+                </div>
+                <!-- Add Button Overlay -->
+                <button class="absolute inset-0 bg-warkops-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span class="bg-warkops-primary text-black font-bold px-4 py-1 font-mono text-xs shadow-[0_0_15px_rgba(244,63,94,0.6)]">ADD +</span>
+                </button>
+            </div>
+
+            <!-- Item Card 2 -->
+            <div class="group relative bg-warkops-panel border border-white/5 hover:border-warkops-primary/50 transition-all cursor-pointer overflow-hidden flex flex-col h-full">
+                <div class="p-4 flex-1 flex flex-col justify-end min-h-[120px] bg-gradient-to-t from-black/80 to-transparent">
+                    <div class="text-[10px] text-warkops-muted font-mono mb-1">FOD-082</div>
+                    <h3 class="font-display font-bold text-white leading-tight">Gyudon Retro</h3>
+                    <div class="mt-2 text-warkops-primary font-mono font-bold">Rp 32.000</div>
+                </div>
+                <button class="absolute inset-0 bg-warkops-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span class="bg-warkops-primary text-black font-bold px-4 py-1 font-mono text-xs shadow-[0_0_15px_rgba(244,63,94,0.6)]">ADD +</span>
+                </button>
+            </div>
+
+            <!-- Item Card 3 (Sold Out) -->
+            <div class="relative bg-warkops-panel border border-white/5 opacity-60 grayscale cursor-not-allowed flex flex-col h-full">
+                <div class="absolute inset-0 flex items-center justify-center z-10">
+                    <div class="border-2 border-white text-white font-black font-display text-xl uppercase -rotate-12 px-4 py-1">SOLD OUT</div>
+                </div>
+                <div class="p-4 flex-1 flex flex-col justify-end min-h-[120px]">
+                    <div class="text-[10px] text-warkops-muted font-mono mb-1">SNK-004</div>
+                    <h3 class="font-display font-bold text-white leading-tight">Roti Bakar</h3>
+                    <div class="mt-2 text-warkops-muted font-mono font-bold">Rp 18.000</div>
+                </div>
+            </div>
+
+             <!-- Item Card 4 -->
+             <div class="group relative bg-warkops-panel border border-white/5 hover:border-warkops-primary/50 transition-all cursor-pointer overflow-hidden flex flex-col h-full">
+                <div class="p-4 flex-1 flex flex-col justify-end min-h-[120px] bg-gradient-to-t from-black/80 to-transparent">
+                    <div class="text-[10px] text-warkops-secondary font-mono mb-1">BEV-009</div>
+                    <h3 class="font-display font-bold text-white leading-tight">Sakura Soda</h3>
+                    <div class="mt-2 text-warkops-primary font-mono font-bold">Rp 22.000</div>
+                </div>
+                <button class="absolute inset-0 bg-warkops-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span class="bg-warkops-primary text-black font-bold px-4 py-1 font-mono text-xs shadow-[0_0_15px_rgba(244,63,94,0.6)]">ADD +</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- === RIGHT PANEL: CART / STRUK === -->
+    <div class="w-full lg:w-96 bg-warkops-panel border border-white/10 flex flex-col shadow-2xl relative">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 bg-dots opacity-20 pointer-events-none"></div>
+
+        <!-- Header Cart -->
+        <div class="p-4 border-b border-white/10 bg-black/20 flex justify-between items-center z-10">
+            <div>
+                <div class="text-[10px] text-warkops-muted font-mono uppercase tracking-widest">Transaction #TRX-8821</div>
+                <div class="text-sm font-display font-bold text-white">CURRENT ORDER</div>
+            </div>
+            <div class="w-2 h-2 bg-warkops-success rounded-full animate-pulse"></div>
+        </div>
+
+        <!-- Cart Items (Scrollable) -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-3 z-10">
+            
+            <!-- Cart Item -->
+            <div class="flex items-start justify-between group">
+                <div class="flex-1">
+                    <div class="text-xs font-bold text-white">Kopi Susu Momo</div>
+                    <div class="text-[10px] text-warkops-muted font-mono">@ 24.000</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="w-5 h-5 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white text-xs rounded border border-white/10">-</button>
+                    <span class="text-sm font-mono font-bold text-warkops-secondary">2</span>
+                    <button class="w-5 h-5 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white text-xs rounded border border-white/10">+</button>
+                </div>
+                <div class="w-16 text-right text-xs font-mono font-bold text-white">48.000</div>
+            </div>
+
+            <!-- Cart Item -->
+            <div class="flex items-start justify-between group">
+                <div class="flex-1">
+                    <div class="text-xs font-bold text-white">Gyudon Retro</div>
+                    <div class="text-[10px] text-warkops-muted font-mono">@ 32.000</div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="w-5 h-5 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white text-xs rounded border border-white/10">-</button>
+                    <span class="text-sm font-mono font-bold text-warkops-secondary">1</span>
+                    <button class="w-5 h-5 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white text-xs rounded border border-white/10">+</button>
+                </div>
+                <div class="w-16 text-right text-xs font-mono font-bold text-white">32.000</div>
+            </div>
+
+        </div>
+
+        <!-- Totals Section -->
+        <div class="p-4 bg-white/5 border-t border-white/10 z-10 space-y-2">
+            <div class="flex justify-between text-xs text-warkops-muted font-mono">
+                <span>SUBTOTAL</span>
+                <span>80.000</span>
+            </div>
+            <div class="flex justify-between text-xs text-warkops-muted font-mono">
+                <span>TAX (10%)</span>
+                <span>8.000</span>
+            </div>
+            <div class="flex justify-between items-end pt-2 border-t border-dashed border-white/10 mt-2">
+                <span class="text-sm font-display font-bold text-white">TOTAL</span>
+                <span class="text-xl font-mono font-bold text-warkops-primary tracking-tight">Rp 88.000</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="p-4 grid grid-cols-2 gap-3 z-10">
+            <button class="py-3 border border-white/10 text-xs font-mono text-warkops-muted hover:text-white hover:bg-white/5 transition uppercase tracking-wider">
+                Clear
+            </button>
+            <button class="py-3 bg-warkops-primary text-black font-display font-black text-sm uppercase tracking-wide hover:brightness-110 shadow-[0_0_20px_rgba(244,63,94,0.4)] transition-all">
+                PROCESS >
+            </button>
+        </div>
+    </div>
+
+</div>

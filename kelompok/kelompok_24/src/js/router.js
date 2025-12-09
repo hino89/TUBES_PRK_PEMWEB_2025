@@ -35,6 +35,17 @@ const routes = {
     }
 };
 
+const controllerScripts = {
+    inventory: 'js/controllers/inventory.js',
+    reports: 'js/controllers/reports.js',
+    users: 'js/controllers/users.js'
+};
+
+const controllerInits = {
+    inventory: () => window.InventoryController && typeof window.InventoryController.init === 'function' && window.InventoryController.init(),
+    reports: () => window.ReportsController && typeof window.ReportsController.init === 'function' && window.ReportsController.init()
+};
+
 async function loadScript(src) {
     return new Promise((resolve, reject) => {
         const old = document.querySelector(`script[src="${src}"]`);
@@ -103,15 +114,18 @@ async function loadContent() {
         // 7. Inject HTML ke Dashboard
         contentDiv.innerHTML = html;
 
-        // Load controller khusus users
-        if (hash === "users") {
-            await loadScript("js/controllers/users.js");
+        // Load controller khusus module tertentu
+        if (controllerScripts[hash]) {
+            await loadScript(controllerScripts[hash]);
         }
 
         // 8. Jalankan Script Init Khusus (jika ada)
-        // Contoh: Load data tabel inventory setelah HTML masuk
         if (typeof route.init === 'function') {
             route.init();
+        }
+
+        if (controllerInits[hash]) {
+            controllerInits[hash]();
         }
 
     } catch (error) {

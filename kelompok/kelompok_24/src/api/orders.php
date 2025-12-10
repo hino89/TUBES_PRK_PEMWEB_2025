@@ -1,7 +1,7 @@
 <?php
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
 require_once 'config.php';
@@ -11,6 +11,8 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
     http_response_code(200);
     exit();
 }
+
+$pdo = connectDB();
 
 function jsonOut($success, $message, $data = null) {
     echo json_encode(["success" => $success, "message" => $message, "data" => $data]);
@@ -166,6 +168,44 @@ if ($method == "POST") {
     $trx["items"] = $items;
 
     jsonOut(true, "Transaction created", $trx);
+}
+
+// ===================================================================
+// PUT — UPDATE PAYMENT (for completing transaction)
+// ===================================================================
+if ($method == "PUT") {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!isset($data["trx_id"]) || !isset($data["payment"])) {
+        jsonOut(false, "Missing fields: trx_id, payment");
+    }
+    
+    $trx_id = intval($data["trx_id"]);
+    $payment = floatval($data["payment"]);
+    $note = $data["note"] ?? null;
+    
+    // Get transaction total
+    $stmt = $pdo->prepare("SELECT total FROM transactions WHERE trx_id = ?");
+    $stmt->execute([$trx_id]);
+    $total = $stmt->fetchColumn();
+    
+    if ($total === false) jsonOut(false, "Transaction not found");
+    
+    $change = $payment - $total;
+    
+    // Update payment & change
+    $stmt = $pdo->prepare("
+        UPDATE transactions 
+        SET payment = ?, change_amount = ?, note = ?
+        WHERE trx_id = ?
+    ");
+    $stmt->execute([$payment, $change, $note, $trx_id]);
+    
+    jsonOut(true, "Payment updated", [
+        "trx_id" => $trx_id,
+        "payment" => $payment,
+        "change" => $change
+    ]);
 }
 
 jsonOut(false, "Invalid method");

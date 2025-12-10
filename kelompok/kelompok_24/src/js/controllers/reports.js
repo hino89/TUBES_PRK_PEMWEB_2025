@@ -1,7 +1,7 @@
 (function (window, document) {
 	'use strict';
 
-	const API_ENDPOINT = 'api/reports.php';
+	const API_ENDPOINT = './api/reports.php';
 	const PRESET_CONFIG = [
 		{ key: 'today', label: 'Hari Ini' },
 		{ key: '7d', label: '7 Hari' },

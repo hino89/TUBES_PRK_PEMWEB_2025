@@ -1,266 +1,250 @@
-// src/js/controllers/inventory.js
+/**
+ * src/js/controllers/inventory.js
+ * Controller untuk Inventory (Menu & Bahan Baku) - Connected to API
+ * Mengelola data Menu (items.php) dan Bahan (ingredients.php)
+ */
+
 (function (window, document) {
-	'use strict';
+    'use strict';
 
-	const MENU_STATUS_META = {
-		ready: { label: 'Ready', className: 'text-warkops-success' },
-		restock: { label: 'Restock', className: 'text-warkops-accent' },
-		prep: { label: 'Prep', className: 'text-warkops-secondary' }
-	};
+    // Konfigurasi Status Visual (Badge Colors)
+    const STATUS_META = {
+        // Menu Status
+        1: { label: 'Ready', className: 'text-warkops-success' },
+        0: { label: 'Sold Out', className: 'text-warkops-accent' },
+        
+        // Stock Status
+        'safe': { label: 'Aman', className: 'text-warkops-success' },
+        'low': { label: 'Low Stock', className: 'text-warkops-accent' },
+        'critical': { label: 'Critical', className: 'text-red-500 animate-pulse' }
+    };
 
-	const STOCK_STATUS_META = {
-		safe: { label: 'Aman', className: 'text-warkops-success' },
-		low: { label: 'Low', className: 'text-warkops-accent' },
-		qc: { label: 'QC', className: 'text-warkops-secondary' }
-	};
+    // State Management
+    const state = {
+        menu: [],
+        stock: [],
+        menuFilter: 'all',
+        stockFilter: 'all'
+    };
 
-	const MENU_ITEMS = [
-		{ id: 'menu-1', name: 'Kopi Susu Momo', note: 'Signature Pink Foam', category: 'Minuman', type: 'drink', price: 24000, status: 'ready' },
-		{ id: 'menu-2', name: 'Roti Bakar Higashi', note: 'Keju • Corned', category: 'Snack', type: 'food', price: 18000, status: 'restock' },
-		{ id: 'menu-3', name: 'Nasi Gyudon Retro', note: 'Extra Onsen Egg', category: 'Makanan', type: 'food', price: 32000, status: 'ready' },
-		{ id: 'menu-4', name: 'Sakura Soda', note: 'Lychee • Yuzu', category: 'Minuman', type: 'drink', price: 22000, status: 'prep' },
-		{ id: 'menu-5', name: 'Matcha Kuromitsu', note: 'Charcoal Jelly', category: 'Minuman', type: 'drink', price: 26000, status: 'ready' }
-	];
+    // Format Rupiah
+    const currency = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0
+    });
 
-	const STOCK_ITEMS = [
-		{ id: 'stock-1', name: 'Beans Arabica 90s Roast', batch: 'Lot #AK-221', supplier: 'Higashi Roastery', qty: '6 kg', status: 'safe' },
-		{ id: 'stock-2', name: 'Sirup Momo', batch: 'Batch 12/2025', supplier: 'Momoka Lab', qty: '5 botol', status: 'low' },
-		{ id: 'stock-3', name: 'Nori Sheet', batch: 'Stasiun Kios 04', supplier: 'Tokyo Mart', qty: '120 lembar', status: 'safe' },
-		{ id: 'stock-4', name: 'Bawang Goreng', batch: 'Vacuum Pack', supplier: 'Pasar Permai', qty: '15 pack', status: 'qc' },
-		{ id: 'stock-5', name: 'Saus Tare Gyudon', batch: 'Blend 07', supplier: 'Higashi Lab', qty: '8 botol', status: 'low' }
-	];
+    let nodes = null;
 
-	const MENU_FILTERS = {
-		all: () => true,
-		food: (item) => item.type === 'food',
-		drink: (item) => item.type === 'drink'
-	};
+    /**
+     * Inisialisasi Controller
+     */
+    async function init() {
+        nodes = collectNodes();
 
-	const STOCK_FILTERS = {
-		all: () => true,
-		safe: (item) => item.status === 'safe',
-		low: (item) => item.status === 'low',
-		qc: (item) => item.status === 'qc'
-	};
+        // Safety check jika view belum siap
+        if (!nodes.menuTableBody || !nodes.stockTableBody) {
+            console.warn('InventoryController: View elements not found.');
+            return;
+        }
 
-	const currency = new Intl.NumberFormat('id-ID', {
-		style: 'currency',
-		currency: 'IDR',
-		maximumFractionDigits: 0
-	});
+        // Setup Filter Listeners
+        bindMenuFilters();
+        bindStockFilters();
 
-	const state = {
-		menuFilter: 'all',
-		stockFilter: 'all'
-	};
+        // Load Data dari API
+        await Promise.all([
+            fetchMenu(),
+            fetchStock()
+        ]);
 
-	let nodes = null;
+        // Render Awal
+        renderMenu();
+        renderStock();
+        updateStats();
+    }
 
-	function init() {
-		nodes = collectNodes();
+    /**
+     * Fetch Data Menu dari API
+     */
+    async function fetchMenu() {
+        try {
+            const response = await fetch('api/items.php');
+            const result = await response.json();
+            
+            if (result.success) {
+                state.menu = result.data;
+            }
+        } catch (error) {
+            console.error("Failed to load menu:", error);
+            nodes.menuTableBody.innerHTML = errorRow("Gagal memuat data menu.");
+        }
+    }
 
-		if (!nodes.menuTableBody || !nodes.stockTableBody) {
-			console.warn('InventoryController: inventory view not ready.');
-			return;
-		}
+    /**
+     * Fetch Data Stock dari API
+     */
+    async function fetchStock() {
+        try {
+            const response = await fetch('api/ingredients.php');
+            const result = await response.json();
+            
+            if (result.success) {
+                state.stock = result.data;
+            }
+        } catch (error) {
+            console.error("Failed to load stock:", error);
+            nodes.stockTableBody.innerHTML = errorRow("Gagal memuat data stok.");
+        }
+    }
 
-		bindMenuFilters();
-		bindStockFilters();
-		renderMenu();
-		renderStock();
-		updateStats();
-	}
+    // --- DOM HELPER FUNCTIONS ---
 
-	function collectNodes() {
-		const filterSection = document.querySelector('section.bg-warkops-panel');
-		const filterGroups = filterSection ? [...filterSection.querySelectorAll('.flex.items-center.gap-3')] : [];
-		const menuFilterButtons = filterGroups[0] ? [...filterGroups[0].querySelectorAll('button')] : [];
-		const stockFilterBadges = filterGroups[1] ? [...filterGroups[1].querySelectorAll('span.text-xs.font-mono')] : [];
+    function collectNodes() {
+        const filterSection = document.querySelector('section.bg-warkops-panel');
+        // Mencari elemen filter dengan selektor yang lebih spesifik
+        const menuFilterBtns = filterSection ? Array.from(filterSection.querySelectorAll('button')) : [];
+        const stockFilterBadges = filterSection ? Array.from(filterSection.querySelectorAll('.cursor-pointer')) : []; // Nanti kita tambah class ini di HTML
 
-		return {
-			menuFilterButtons,
-			stockFilterBadges,
-			menuTableBody: findTableBody('Daftar Menu'),
-			stockTableBody: findTableBody('Bahan Mentah'),
-			stats: detectHeroStats()
-		};
-	}
+        return {
+            menuFilterButtons: menuFilterBtns,
+            stockFilterBadges: document.querySelectorAll('[data-stock-filter]'), // Kita akan update HTML biar gampang selectornya
+            menuTableBody: document.querySelector('#menu-table-body'),
+            stockTableBody: document.querySelector('#stock-table-body'),
+            stats: {
+                activeStock: document.getElementById('stat-active-stock'),
+                readyMenu: document.getElementById('stat-ready-menu')
+            }
+        };
+    }
 
-	function findTableBody(title) {
-		const cards = [...document.querySelectorAll('article')];
-		const target = cards.find((card) => {
-			const heading = card.querySelector('h3');
-			return heading && heading.textContent.toLowerCase().includes(title.toLowerCase());
-		});
+    function bindMenuFilters() {
+        nodes.menuFilterButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const filter = e.target.innerText.toLowerCase();
+                // Map text button ke filter key
+                state.menuFilter = filter === 'all' ? 'all' : filter; // 'makanan' / 'minuman'
+                
+                // Update UI Button Active State
+                nodes.menuFilterButtons.forEach(b => {
+                    b.classList.remove('border-warkops-primary', 'text-warkops-primary');
+                    b.classList.add('border-white/10', 'text-white/70');
+                });
+                e.target.classList.remove('border-white/10', 'text-white/70');
+                e.target.classList.add('border-warkops-primary', 'text-warkops-primary');
 
-		return target ? target.querySelector('tbody') : null;
-	}
+                renderMenu();
+            });
+        });
+    }
 
-	function detectHeroStats() {
-		const hero = document.querySelector('section.relative.bg-gradient-to-r');
-		if (!hero) return { bahan: null, menu: null };
+    function bindStockFilters() {
+        // Karena filter stok di HTML awalnya cuma span biasa, logicnya kita sesuaikan nanti
+        // Untuk sekarang kita skip binding kompleks, fokus render data dulu
+    }
 
-		const counters = hero.querySelectorAll('.grid .text-2xl');
-		return {
-			bahan: counters[0] || null,
-			menu: counters[1] || null
-		};
-	}
+    // --- RENDER FUNCTIONS ---
 
-	function bindMenuFilters() {
-		if (!nodes.menuFilterButtons.length) return;
+    function renderMenu() {
+        const tbody = nodes.menuTableBody;
+        tbody.innerHTML = '';
 
-		nodes.menuFilterButtons.forEach((button) => {
-			const label = button.textContent.trim().toLowerCase();
-			let filterKey = null;
+        // Filter Logic
+        const filtered = state.menu.filter(item => {
+            if (state.menuFilter === 'all') return true;
+            // Case insensitive check untuk kategori (Misal: 'Makanan' vs 'makanan')
+            return item.category_name && item.category_name.toLowerCase() === state.menuFilter;
+        });
 
-			if (label === 'all') filterKey = 'all';
-			if (label === 'makanan') filterKey = 'food';
-			if (label === 'minuman') filterKey = 'drink';
+        if (filtered.length === 0) {
+            tbody.innerHTML = emptyRow("Tidak ada menu ditemukan.");
+            return;
+        }
 
-			if (!filterKey) return;
+        filtered.forEach(item => {
+            const isReady = item.is_available == 1;
+            const status = STATUS_META[isReady ? 1 : 0];
 
-			button.dataset.menuFilter = filterKey;
-			button.addEventListener('click', () => {
-				if (state.menuFilter === filterKey) return;
-				state.menuFilter = filterKey;
-				highlightMenuFilter(filterKey);
-				renderMenu();
-			});
-		});
+            const row = `
+                <tr class="hover:bg-white/5 transition-colors group">
+                    <td class="py-3">
+                        <div class="font-bold text-white group-hover:text-warkops-primary transition-colors">${item.name}</div>
+                        <div class="text-[10px] text-warkops-muted">${item.description || '-'}</div>
+                    </td>
+                    <td class="py-3 text-white/80">${item.category_name || 'Uncategorized'}</td>
+                    <td class="py-3 text-right font-mono text-white">${formatCurrency(item.price)}</td>
+                    <td class="py-3 text-right ${status.className} font-bold text-xs uppercase">${status.label}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
 
-		highlightMenuFilter(state.menuFilter);
-	}
+    function renderStock() {
+        const tbody = nodes.stockTableBody;
+        tbody.innerHTML = '';
 
-	function bindStockFilters() {
-		if (!nodes.stockFilterBadges.length) return;
+        if (state.stock.length === 0) {
+            tbody.innerHTML = emptyRow("Stok kosong.");
+            return;
+        }
 
-		nodes.stockFilterBadges.forEach((badge) => {
-			const label = badge.textContent.trim().toLowerCase();
-			let filterKey = null;
+        state.stock.forEach(item => {
+            // Logic Status Stok
+            const qty = parseFloat(item.stock_qty);
+            const threshold = parseFloat(item.low_stock_threshold || 5); // Default threshold 5 jika null
+            
+            let statusKey = 'safe';
+            if (qty <= 0) statusKey = 'critical';
+            else if (qty <= threshold) statusKey = 'low';
 
-			if (label.includes('stok aman')) filterKey = 'safe';
-			if (label.includes('restock')) filterKey = 'low';
-			if (label.includes('qc')) filterKey = 'qc';
+            const status = STATUS_META[statusKey];
 
-			if (!filterKey) return;
+            const row = `
+                <tr class="hover:bg-white/5 transition-colors">
+                    <td class="py-3">
+                        <div class="font-bold text-white">${item.name}</div>
+                        <div class="text-[10px] text-warkops-muted font-mono">ID: ING-${String(item.ingredient_id).padStart(3, '0')}</div>
+                    </td>
+                    <td class="py-3 text-white/50 text-xs italic">Local Supplier</td> <!-- Placeholder -->
+                    <td class="py-3 text-right font-mono text-white">
+                        <span class="text-lg font-bold">${qty}</span> <span class="text-xs text-warkops-muted">${item.unit}</span>
+                    </td>
+                    <td class="py-3 text-right ${status.className} font-bold text-xs uppercase">${status.label}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
 
-			badge.dataset.stockFilter = filterKey;
-			badge.classList.add('cursor-pointer', 'select-none');
-			badge.setAttribute('role', 'button');
-			badge.setAttribute('tabindex', '0');
+    function updateStats() {
+        if (nodes.stats.activeStock) {
+            const activeCount = state.stock.filter(i => parseFloat(i.stock_qty) > 0).length;
+            nodes.stats.activeStock.innerText = activeCount;
+        }
+        if (nodes.stats.readyMenu) {
+            const readyCount = state.menu.filter(i => i.is_available == 1).length;
+            nodes.stats.readyMenu.innerText = readyCount;
+        }
+    }
 
-			const handleToggle = () => toggleStockFilter(filterKey);
-			badge.addEventListener('click', handleToggle);
-			badge.addEventListener('keydown', (event) => {
-				if (event.key === 'Enter' || event.key === ' ') {
-					event.preventDefault();
-					handleToggle();
-				}
-			});
-		});
+    // --- UTILS ---
 
-		highlightStockFilter(state.stockFilter);
-	}
+    function emptyRow(msg) {
+        return `<tr><td colspan="4" class="py-8 text-center text-warkops-muted font-mono text-xs border-t border-white/5">${msg}</td></tr>`;
+    }
 
-	function toggleStockFilter(filterKey) {
-		state.stockFilter = state.stockFilter === filterKey ? 'all' : filterKey;
-		highlightStockFilter(state.stockFilter);
-		renderStock();
-		updateStats();
-	}
+    function errorRow(msg) {
+        return `<tr><td colspan="4" class="py-8 text-center text-red-500 font-mono text-xs border-t border-red-500/20 bg-red-500/5">${msg}</td></tr>`;
+    }
 
-	function highlightMenuFilter(activeKey) {
-		nodes.menuFilterButtons.forEach((button) => {
-			const isActive = button.dataset.menuFilter === activeKey;
-			button.classList.toggle('border-warkops-primary/60', isActive);
-			button.classList.toggle('text-warkops-primary', isActive);
-			button.classList.toggle('bg-white/10', isActive);
-			button.classList.toggle('text-white', !isActive);
-		});
-	}
+    function formatCurrency(val) {
+        return currency.format(val).replace(',00', '');
+    }
 
-	function highlightStockFilter(activeKey) {
-		nodes.stockFilterBadges.forEach((badge) => {
-			const isActive = activeKey !== 'all' && badge.dataset.stockFilter === activeKey;
-			badge.classList.toggle('bg-white/10', isActive);
-			badge.classList.toggle('border-white/30', isActive);
-		});
-	}
+    // Expose Global untuk Router
+    window.InventoryController = {
+        init
+    };
 
-	function renderMenu() {
-		const filterFn = MENU_FILTERS[state.menuFilter] || MENU_FILTERS.all;
-		const rows = MENU_ITEMS.filter(filterFn)
-			.map((item) => {
-				const statusMeta = MENU_STATUS_META[item.status] || MENU_STATUS_META.ready;
-				return `
-					<tr class="hover:bg-white/5">
-						<td class="py-3">
-							<div class="font-bold">${item.name}</div>
-							<div class="text-[10px] text-warkops-muted">${item.note}</div>
-						</td>
-						<td class="py-3">${item.category}</td>
-						<td class="py-3 text-right">${formatCurrency(item.price)}</td>
-						<td class="py-3 text-right ${statusMeta.className}">${statusMeta.label}</td>
-					</tr>
-				`;
-			})
-			.join('');
-
-		nodes.menuTableBody.innerHTML = rows || emptyRow('Menu belum tersedia');
-		updateStats();
-	}
-
-	function renderStock() {
-		const filterFn = STOCK_FILTERS[state.stockFilter] || STOCK_FILTERS.all;
-		const rows = STOCK_ITEMS.filter(filterFn)
-			.map((item) => {
-				const statusMeta = STOCK_STATUS_META[item.status] || STOCK_STATUS_META.safe;
-				return `
-					<tr class="hover:bg-white/5">
-						<td class="py-3">
-							<div class="font-bold">${item.name}</div>
-							<div class="text-[10px] text-warkops-muted">${item.batch}</div>
-						</td>
-						<td class="py-3">${item.supplier}</td>
-						<td class="py-3 text-right">${item.qty}</td>
-						<td class="py-3 text-right ${statusMeta.className}">${statusMeta.label}</td>
-					</tr>
-				`;
-			})
-			.join('');
-
-		nodes.stockTableBody.innerHTML = rows || emptyRow('Data bahan baku kosong');
-	}
-
-	function emptyRow(message) {
-		return `
-			<tr>
-				<td colspan="4" class="py-6 text-center text-warkops-muted text-xs font-mono">${message}</td>
-			</tr>
-		`;
-	}
-
-	function updateStats() {
-		if (!nodes.stats) return;
-
-		const bahanAktif = STOCK_ITEMS.filter((item) => item.status !== 'low').length;
-		const menuReady = MENU_ITEMS.filter((item) => item.status === 'ready').length;
-
-		if (nodes.stats.bahan) nodes.stats.bahan.textContent = bahanAktif;
-		if (nodes.stats.menu) nodes.stats.menu.textContent = menuReady;
-	}
-
-	function formatCurrency(value) {
-		return currency.format(value).replace('Rp', 'Rp ');
-	}
-
-	window.InventoryController = {
-		init,
-		state,
-		data: {
-			menu: MENU_ITEMS,
-			stock: STOCK_ITEMS
-		}
-	};
 })(window, document);

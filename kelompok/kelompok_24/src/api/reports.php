@@ -1,6 +1,6 @@
 <?php
-require_once '../config.php';
-require_once '../db.php';
+require_once 'config.php';
+require_once 'db.php';
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
+
 
 $pdo = connectDB(); 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -27,19 +28,38 @@ if ($method === 'GET') {
  */
 function handleReportRequest($pdo) {
     try {
-        $today = date('Y-m-d');
-        $start_of_week = date('Y-m-d', strtotime('monday this week'));
-        $end_of_week = date('Y-m-d', strtotime('sunday this week'));
-        
-        $metrics = getTopMetrics($pdo, $today);
-        $weekly_sales = getWeeklySalesData($pdo, $start_of_week, $end_of_week);
-        $transaction_history = getTransactionHistory($pdo, 10); // Ambil 10 transaksi terbaru
+        $rangePreset = isset($_GET['range']) ? strtolower($_GET['range']) : '7d';
+        $startInput = $_GET['start_date'] ?? null;
+        $endInput = $_GET['end_date'] ?? null;
+        [$startDate, $endDate] = resolveRange($rangePreset, $startInput, $endInput);
+
+        $operatorId = isset($_GET['operator_id']) && $_GET['operator_id'] !== ''
+            ? (int) $_GET['operator_id']
+            : null;
+        $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 15;
+        if ($limit < 5) $limit = 5;
+        if ($limit > 50) $limit = 50;
+
+        $metrics = getTopMetrics($pdo, $startDate, $endDate, $operatorId);
+        $dailySales = getDailySalesData($pdo, $startDate, $endDate, $operatorId);
+        $transactionHistory = getTransactionHistory($pdo, $startDate, $endDate, $operatorId, $limit);
+        $operators = getOperatorOptions($pdo);
 
         $response = [
             'success' => true,
+            'filters' => [
+                'range' => [
+                    'preset' => $rangePreset,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                ],
+                'operator_id' => $operatorId,
+                'operators' => $operators,
+            ],
             'metrics' => $metrics,
-            'weekly_sales' => $weekly_sales,
-            'transaction_history' => $transaction_history
+            'daily_sales' => $dailySales,
+            'weekly_sales' => $dailySales,
+            'transaction_history' => $transactionHistory
         ];
 
         http_response_code(200);
@@ -54,88 +74,207 @@ function handleReportRequest($pdo) {
 /**
  * Menghitung metrik utama (Revenue, Total Trx, Best Seller).
  */
-function getTopMetrics($pdo, $date) {
-    // 1. Total Revenue dan Total Trx
-    $sql_metrics = "SELECT 
-        SUM(total) AS total_revenue, 
-        COUNT(trx_id) AS total_transactions 
-        FROM transactions 
-        WHERE DATE(datetime) = :date";
-    $stmt_metrics = $pdo->prepare($sql_metrics);
-    $stmt_metrics->execute(['date' => $date]);
-    $metrics = $stmt_metrics->fetch();
-    
-    // 2. Best Seller
-    $sql_best_seller = "SELECT 
-        m.name, 
-        SUM(ti.qty) AS total_qty_sold 
+function getTopMetrics($pdo, $startDate, $endDate, $operatorId = null) {
+    $params = [
+        ':start' => $startDate . ' 00:00:00',
+        ':end' => $endDate . ' 23:59:59'
+    ];
+
+    $sqlMetrics = "SELECT 
+        COALESCE(SUM(total), 0) AS total_revenue,
+        COUNT(trx_id) AS total_transactions
+        FROM transactions
+        WHERE datetime BETWEEN :start AND :end";
+
+    if ($operatorId) {
+        $sqlMetrics .= ' AND user_id = :operator_id';
+        $params[':operator_id'] = $operatorId;
+    }
+
+    $stmtMetrics = $pdo->prepare($sqlMetrics);
+    $stmtMetrics->execute($params);
+    $metrics = $stmtMetrics->fetch();
+
+    $sqlBest = "SELECT 
+        m.name,
+        SUM(ti.qty) AS total_qty_sold
         FROM transaction_items ti
         JOIN menu m ON ti.menu_id = m.menu_id
         JOIN transactions t ON ti.trx_id = t.trx_id
-        WHERE DATE(t.datetime) = :date
-        GROUP BY ti.menu_id, m.name
-        ORDER BY total_qty_sold DESC
-        LIMIT 1";
-    $stmt_best_seller = $pdo->prepare($sql_best_seller);
-    $stmt_best_seller->execute(['date' => $date]);
-    $best_seller = $stmt_best_seller->fetch();
+        WHERE t.datetime BETWEEN :start AND :end";
+
+    if ($operatorId) {
+        $sqlBest .= ' AND t.user_id = :operator_id';
+    }
+
+    $sqlBest .= ' GROUP BY ti.menu_id, m.name ORDER BY total_qty_sold DESC LIMIT 1';
+
+    $stmtBest = $pdo->prepare($sqlBest);
+    $stmtBest->execute($params);
+    $best = $stmtBest->fetch();
 
     return [
-        'total_revenue' => (float)$metrics['total_revenue'],
-        'total_transactions' => (int)$metrics['total_transactions'],
-        'best_seller_name' => $best_seller ? $best_seller['name'] : 'N/A',
-        'best_seller_units' => $best_seller ? (int)$best_seller['total_qty_sold'] : 0,
-        // Profit Margin membutuhkan perhitungan COGS dari ingredients/recipes, 
-        // yang terlalu kompleks untuk API dasar ini. Kita kembalikan nilai default.
-        'profit_margin' => 0.38 
+        'total_revenue' => isset($metrics['total_revenue']) ? (float) $metrics['total_revenue'] : 0,
+        'total_transactions' => isset($metrics['total_transactions']) ? (int) $metrics['total_transactions'] : 0,
+        'best_seller_name' => $best ? $best['name'] : 'N/A',
+        'best_seller_units' => $best ? (int) $best['total_qty_sold'] : 0,
+        'profit_margin' => 0.38
     ];
 }
 
 /**
  * Mengambil data penjualan harian dalam rentang waktu (misalnya per minggu).
  */
-function getWeeklySalesData($pdo, $start_date, $end_date) {
-    $sql = "SELECT 
-        DATE(datetime) AS sale_date, 
-        SUM(total) AS daily_revenue 
-        FROM transactions 
-        WHERE datetime >= :start_date AND datetime <= DATE_ADD(:end_date, INTERVAL 1 DAY)
-        GROUP BY sale_date
-        ORDER BY sale_date ASC";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute(['start_date' => $start_date, 'end_date' => $end_date]);
-    
-    $results = $stmt->fetchAll();
-    $formatted_data = [];
+function getDailySalesData($pdo, $startDate, $endDate, $operatorId = null) {
+    $params = [
+        ':start' => $startDate . ' 00:00:00',
+        ':end' => $endDate . ' 23:59:59'
+    ];
 
-    // Map hasil ke format yang mudah digunakan oleh JS (date => revenue)
-    foreach ($results as $row) {
-        $formatted_data[$row['sale_date']] = (float)$row['daily_revenue'];
+    $sql = "SELECT 
+        DATE(datetime) AS sale_date,
+        SUM(total) AS daily_revenue
+        FROM transactions
+        WHERE datetime BETWEEN :start AND :end";
+
+    if ($operatorId) {
+        $sql .= ' AND user_id = :operator_id';
+        $params[':operator_id'] = $operatorId;
     }
-    return $formatted_data;
+
+    $sql .= ' GROUP BY sale_date ORDER BY sale_date ASC';
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $results = $stmt->fetchAll();
+
+    $formatted = [];
+    foreach ($results as $row) {
+        $formatted[$row['sale_date']] = (float) $row['daily_revenue'];
+    }
+
+    return $formatted;
 }
 
 /**
  * Mengambil daftar transaksi terbaru.
  */
-function getTransactionHistory($pdo, $limit = 10) {
+function getTransactionHistory($pdo, $startDate, $endDate, $operatorId = null, $limit = 10) {
+    $params = [
+        ':start' => $startDate . ' 00:00:00',
+        ':end' => $endDate . ' 23:59:59'
+    ];
+
     $sql = "SELECT 
-        t.trx_id, 
-        t.datetime, 
-        t.total, 
+        t.trx_id,
+        t.datetime,
+        t.total,
+        t.payment,
+        t.change_amount,
+        t.note,
         u.username AS operator_username,
         GROUP_CONCAT(CONCAT(ti.qty, 'x ', m.name) SEPARATOR ', ') AS item_summary
         FROM transactions t
         JOIN users u ON t.user_id = u.user_id
         JOIN transaction_items ti ON t.trx_id = ti.trx_id
         JOIN menu m ON ti.menu_id = m.menu_id
-        GROUP BY t.trx_id, t.datetime, t.total, u.username
-        ORDER BY t.datetime DESC
-        LIMIT :limit";
+        WHERE t.datetime BETWEEN :start AND :end";
+
+    if ($operatorId) {
+        $sql .= ' AND t.user_id = :operator_id';
+    }
+
+    $sql .= ' GROUP BY t.trx_id, t.datetime, t.total, t.payment, t.change_amount, t.note, u.username'
+        . ' ORDER BY t.datetime DESC LIMIT :limit';
+
     $stmt = $pdo->prepare($sql);
+    if ($operatorId) {
+        $params[':operator_id'] = $operatorId;
+    }
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();
 
-    return $stmt->fetchAll();
+    $rows = $stmt->fetchAll();
+    foreach ($rows as &$row) {
+        $row['total'] = (float) $row['total'];
+        $row['payment'] = isset($row['payment']) ? (float) $row['payment'] : 0;
+        $row['change_amount'] = isset($row['change_amount']) ? (float) $row['change_amount'] : 0;
+        $row['status'] = determineStatus($row);
+    }
+
+    return $rows;
+}
+
+function determineStatus(array $transaction): string
+{
+    $note = strtolower($transaction['note'] ?? '');
+    if (strpos($note, 'void') !== false) {
+        return 'VOID';
+    }
+
+    if ($transaction['payment'] >= $transaction['total']) {
+        return 'PAID';
+    }
+
+    return 'UNPAID';
+}
+
+function getOperatorOptions($pdo): array
+{
+    $sql = "SELECT user_id, username, full_name FROM users WHERE is_active = 1 ORDER BY username";
+    $rows = $pdo->query($sql)->fetchAll();
+
+    return array_map(function ($row) {
+        return [
+            'id' => (int) $row['user_id'],
+            'label' => $row['full_name'] ?: $row['username'],
+            'username' => $row['username']
+        ];
+    }, $rows);
+}
+
+function resolveRange(string $preset, ?string $startInput, ?string $endInput): array
+{
+    $today = new DateTimeImmutable('today');
+
+    if ($preset === 'custom') {
+        $start = sanitizeDate($startInput) ?? $today->format('Y-m-d');
+        $end = sanitizeDate($endInput) ?? $start;
+        if ($end < $start) {
+            $tmp = $start;
+            $start = $end;
+            $end = $tmp;
+        }
+        return [$start, $end];
+    }
+
+    switch ($preset) {
+        case 'today':
+            $start = $today;
+            break;
+        case '30d':
+            $start = $today->sub(new DateInterval('P29D'));
+            break;
+        case '7d':
+        default:
+            $start = $today->sub(new DateInterval('P6D'));
+            $preset = '7d';
+            break;
+    }
+
+    return [$start->format('Y-m-d'), $today->format('Y-m-d')];
+}
+
+function sanitizeDate(?string $value): ?string
+{
+    if (!$value) {
+        return null;
+    }
+
+    $date = DateTime::createFromFormat('Y-m-d', $value);
+    return $date ? $date->format('Y-m-d') : null;
 }
 ?>

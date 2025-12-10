@@ -1,78 +1,76 @@
-(function() {
-    const API_URL = 'http://localhost/TUBES_PRK_PEMWEB_2025/kelompok/kelompok_24/src/api/home.php';
+/**
+ * src/js/controllers/home.js
+ * Controller Dashboard - Adapted for WarkOps SPA Architecture
+ */
 
-    const dom = {
-        sales: document.getElementById('d-total-sales'),
-        growth: document.getElementById('d-sales-growth'),
-        orders: document.getElementById('d-total-orders'),
-        chart: document.getElementById('d-chart-container'),
-        popular: document.getElementById('d-popular-list')
-    };
+window.HomeController = {
+    // Gunakan relative path agar aman dari masalah CORS/Port
+    apiUrl: 'api/home.php',
+    interval: null,
 
-    const formatCompact = (number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            notation: "compact",
-            compactDisplay: "short",
-            maximumFractionDigits: 1
-        }).format(number);
-    };
+    // Fungsi wajib yang dipanggil oleh Router saat halaman dimuat
+    init() {
+        this.loadStats();
+        // Auto refresh data setiap 60 detik agar real-time
+        this.interval = setInterval(() => this.loadStats(), 60000);
+    },
 
-    const formatFull = (number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0
-        }).format(number);
-    };
+    // Fungsi cleanup (optional, dipanggil jika router support destroy)
+    destroy() {
+        if (this.interval) clearInterval(this.interval);
+    },
 
-    async function initDashboard() {
+    async loadStats() {
         try {
-            const response = await fetch(API_URL);
+            const response = await fetch(this.apiUrl);
             const result = await response.json();
 
             if (result.success) {
-                updateStatistics(result.data);
-                generateChart(result.data.weekly_chart);
-                generatePopularList(result.data.popular_items);
+                this.updateStatistics(result.data);
+                this.generateChart(result.data.weekly_chart);
+                this.generatePopularList(result.data.popular_items);
             } else {
-                console.error(result.message);
+                console.error("Dashboard API Error:", result.message);
             }
 
         } catch (error) {
-            console.error(error);
+            console.error("Fetch Error:", error);
         }
-    }
+    },
 
-    function updateStatistics(data) {
-        if (dom.sales) {
-            dom.sales.textContent = formatCompact(data.sales_today);
-            dom.sales.classList.remove('animate-pulse');
-        }
+    updateStatistics(data) {
+        // Helper element selector
+        const el = (id) => document.getElementById(id);
 
-        if (dom.orders) {
-            dom.orders.textContent = data.orders_today;
-            dom.orders.classList.remove('animate-pulse');
+        if (el('d-total-sales')) {
+            el('d-total-sales').textContent = this.formatCompact(data.sales_today);
+            el('d-total-sales').classList.remove('animate-pulse');
         }
 
-        if (dom.growth) {
+        if (el('d-total-orders')) {
+            el('d-total-orders').textContent = data.orders_today;
+            el('d-total-orders').classList.remove('animate-pulse');
+        }
+
+        if (el('d-sales-growth')) {
             const percent = parseFloat(data.growth_percent);
             const isPositive = percent >= 0;
             const symbol = isPositive ? '▲' : '▼';
             const colorClass = isPositive ? 'text-warkops-success' : 'text-red-500';
             
-            dom.growth.className = `font-bold ${colorClass}`;
-            dom.growth.textContent = `${symbol} ${Math.abs(percent)}%`;
+            el('d-sales-growth').className = `font-bold ${colorClass}`;
+            el('d-sales-growth').textContent = `${symbol} ${Math.abs(percent)}%`;
         }
-    }
+    },
 
-    function generateChart(chartData) {
-        if (!dom.chart) return;
-        dom.chart.innerHTML = '';
+    generateChart(chartData) {
+        const container = document.getElementById('d-chart-container');
+        if (!container) return;
+        
+        container.innerHTML = '';
 
         if (!chartData || chartData.length === 0) {
-            dom.chart.innerHTML = '<div class="text-xs text-white self-center">No Data</div>';
+            container.innerHTML = '<div class="text-xs text-white self-center">No Data</div>';
             return;
         }
 
@@ -84,6 +82,7 @@
             
             const bar = document.createElement('div');
             
+            // Styling bar chart dengan Tailwind
             bar.className = `
                 w-full 
                 bg-warkops-primary/40 
@@ -92,31 +91,37 @@
                 relative group 
                 cursor-pointer 
                 transition-all duration-500 ease-out
+                rounded-t-sm
             `;
             
+            // Set tinggi minimal 5% agar bar tetap terlihat walau nilai kecil
             bar.style.height = `${Math.max(heightPercent, 5)}%`;
 
             const dateLabel = new Date(day.date).toLocaleDateString('id-ID', { weekday: 'short' });
+            
+            // Tooltip saat hover
             bar.innerHTML = `
                 <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
                             opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                     <div class="bg-black border border-white/20 text-white text-[10px] px-2 py-1 font-mono whitespace-nowrap shadow-lg">
                         <div class="font-bold text-warkops-primary">${dateLabel}</div>
-                        <div>${formatFull(val)}</div>
+                        <div>${this.formatFull(val)}</div>
                     </div>
                 </div>
             `;
 
-            dom.chart.appendChild(bar);
+            container.appendChild(bar);
         });
-    }
+    },
 
-    function generatePopularList(items) {
-        if (!dom.popular) return;
-        dom.popular.innerHTML = '';
+    generatePopularList(items) {
+        const container = document.getElementById('d-popular-list');
+        if (!container) return;
+        
+        container.innerHTML = '';
 
         if (!items || items.length === 0) {
-            dom.popular.innerHTML = '<div class="text-xs text-warkops-muted italic text-center py-4">Belum ada transaksi hari ini.</div>';
+            container.innerHTML = '<div class="text-xs text-warkops-muted italic text-center py-4">Belum ada transaksi hari ini.</div>';
             return;
         }
 
@@ -141,9 +146,27 @@
                 </div>
             `;
             
-            dom.popular.insertAdjacentHTML('beforeend', itemHTML);
+            container.insertAdjacentHTML('beforeend', itemHTML);
         });
-    }
+    },
 
-    initDashboard();
-})();
+    // --- Formatters ---
+    
+    formatCompact(number) {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            notation: "compact",
+            compactDisplay: "short",
+            maximumFractionDigits: 1
+        }).format(number);
+    },
+
+    formatFull(number) {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(number);
+    }
+};

@@ -1,5 +1,5 @@
 /**
- * src/js/controllers/menu.js
+ * src/js/controllers/items.js
  * Controller untuk CRUD Menu (items.php API)*/
 
 (function (window, document) {

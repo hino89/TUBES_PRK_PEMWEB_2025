@@ -37,6 +37,17 @@ const routes = {
     }
 };
 
+const controllerScripts = {
+    inventory: 'js/controllers/inventory.js',
+    reports: 'js/controllers/reports.js',
+    users: 'js/controllers/users.js'
+};
+
+const controllerInits = {
+    inventory: () => window.InventoryController && typeof window.InventoryController.init === 'function' && window.InventoryController.init(),
+    reports: () => window.ReportsController && typeof window.ReportsController.init === 'function' && window.ReportsController.init()
+};
+
 async function loadScript(src) {
     return new Promise((resolve, reject) => {
         // Cek jika script sudah ada
@@ -109,6 +120,10 @@ async function loadContent() {
                 console.log(`Initializing ${route.controller}...`);
                 window[route.controller].init();
             }
+        }
+
+        if (controllerInits[hash]) {
+            controllerInits[hash]();
         }
 
     } catch (error) {

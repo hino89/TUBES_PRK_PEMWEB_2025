@@ -13,18 +13,18 @@ Gunakan ini untuk mendaftarkan Admin dan Kasir. Password akan otomatis di-hash o
 ### **Request A (Buat Admin Utama)**
 
 {  
-    "username": "ADMIN\_01",  
+    "username": "ADMIN_01",  
     "password": "admin123",  
-    "full\_name": "Doctor Hino",  
+    "full_name": "Doctor Hino",  
     "role": "admin"  
 }
 
 ### **Request B (Buat Kasir)**
 
 {  
-    "username": "KASIR\_01",  
+    "username": "KASIR_01",  
     "password": "kasir123",  
-    "full\_name": "Amiya",  
+    "full_name": "Amiya",  
     "role": "kasir"  
 }
 
@@ -48,8 +48,8 @@ Gunakan ini untuk mendaftarkan Admin dan Kasir. Password akan otomatis di-hash o
 {  
     "name": "Beans Arabica",  
     "unit": "gram",  
-    "stock\_qty": 5000,  
-    "low\_stock\_threshold": 500  
+    "stock_qty": 5000,  
+    "low_stock_threshold": 500  
 }
 
 **Bahan B (Susu):**
@@ -57,8 +57,8 @@ Gunakan ini untuk mendaftarkan Admin dan Kasir. Password akan otomatis di-hash o
 {  
     "name": "Fresh Milk",  
     "unit": "ml",  
-    "stock\_qty": 10000,  
-    "low\_stock\_threshold": 1000  
+    "stock_qty": 10000,  
+    "low_stock_threshold": 1000  
 }
 
 ### **3\. MENU ITEMS (Daftar Menu Jual)**
@@ -69,8 +69,8 @@ Gunakan ini untuk mendaftarkan Admin dan Kasir. Password akan otomatis di-hash o
     "name": "Kopi Susu Momo",  
     "description": "Signature drink with pink foam",  
     "price": 24000,  
-    "category\_id": 1,  
-    "is\_available": 1  
+    "category_id": 1,  
+    "is_available": 1  
 }
 
 ## **🔵 PHASE 2: RACIK RESEP (The Core Logic)**
@@ -82,18 +82,18 @@ Disini kita menghubungkan **Menu** dengan **Bahan**. *Asumsi ID: Menu Kopi Susu 
 ### **Komponen 1: Kopi (18 gram)**
 
 {  
-    "menu\_id": 1,  
-    "ingredient\_id": 1,  
-    "qty\_used": 18,  
+    "menu_id": 1,  
+    "ingredient_id": 1,  
+    "qty_used": 18,  
     "unit": "gram"  
 }
 
 ### **Komponen 2: Susu (150 ml)**
 
 {  
-    "menu\_id": 1,  
-    "ingredient\_id": 2,  
-    "qty\_used": 150,  
+    "menu_id": 1,  
+    "ingredient_id": 2,  
+    "qty_used": 150,  
     "unit": "ml"  
 }
 
@@ -114,7 +114,7 @@ Ternyata susunya bukan 150ml, tapi harusnya **200ml**.
 **Method:** `PUT` **URL:** `.../recipes.php?id=5` \<-- *PENTING: Pakai ID Resep, bukan ID Menu* **Body (JSON):**
 
 {  
-    "qty\_used": 200  
+    "qty_used": 200  
 }
 
 *Note: Kamu hanya perlu kirim field yang mau diubah saja. `menu_id` atau `ingredient_id` tidak perlu dikirim kalau tidak berubah.*

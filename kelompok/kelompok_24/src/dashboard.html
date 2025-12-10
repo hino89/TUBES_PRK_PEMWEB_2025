@@ -12,34 +12,31 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="js/theme.js"></script>
 
+    <!-- LOAD AUTH CONTROLLER -->
+    <script src="js/controllers/auth.js"></script>
+
+    <!-- AUTH GUARD SCRIPT (CRITICAL) -->
+    <script>
+        // Cek login SEBELUM halaman render. Kalau gak login, tendang.
+        const currentUser = Auth.requireAuth(); 
+        if (!currentUser) document.body.style.display = 'none'; // Prevent flash content
+    </script>
+
     <style>
-        /* Scrollbar Keren */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0f0f11; }
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #f43f5e; }
-
-        /* Cut Corner untuk Sidebar Item */
-        .nav-item-clip {
-            clip-path: polygon(0 0, 100% 0, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-        }
-        
-        /* Active State Marker */
-        .nav-active {
-            background: linear-gradient(90deg, rgba(244,63,94,0.1) 0%, transparent 100%);
-            border-left: 3px solid #f43f5e;
-            color: #f43f5e;
-        }
+        .nav-item-clip { clip-path: polygon(0 0, 100% 0, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+        .nav-active { background: linear-gradient(90deg, rgba(244,63,94,0.1) 0%, transparent 100%); border-left: 3px solid #f43f5e; color: #f43f5e; }
     </style>
 </head>
 <body class="bg-warkops-bg text-warkops-text font-sans h-screen w-screen flex overflow-hidden selection:bg-warkops-primary selection:text-black">
 
     <!-- === SIDEBAR (Fixed Left) === -->
     <aside class="w-64 bg-warkops-panel border-r border-white/5 flex flex-col relative z-20">
-        <!-- Sidebar Background Pattern -->
         <div class="absolute inset-0 bg-seigaiha opacity-10 pointer-events-none"></div>
 
-        <!-- Logo Area -->
         <div class="h-16 flex items-center px-6 border-b border-white/5 bg-black/20 backdrop-blur-sm z-10">
             <h1 class="font-display font-black text-2xl tracking-tight text-white">
                 WARK<span class="text-warkops-primary">OPS</span>
@@ -47,26 +44,25 @@
             <span class="ml-2 text-[9px] font-mono bg-white/10 px-1 py-0.5 rounded text-warkops-accent">V.1.0</span>
         </div>
 
-        <!-- User Info (Mini Profile) -->
+        <!-- DYNAMIC USER PROFILE -->
         <div class="p-4 border-b border-white/5 z-10">
             <div class="bg-black/30 p-3 rounded border border-white/5 flex items-center gap-3">
-                <div class="w-8 h-8 rounded bg-gradient-to-br from-warkops-primary to-purple-600 flex items-center justify-center font-bold text-black font-mono text-xs">
+                <!-- Avatar -->
+                <div id="user-avatar" class="w-8 h-8 rounded bg-gradient-to-br from-warkops-primary to-purple-600 flex items-center justify-center font-bold text-black font-mono text-xs">
                     OP
                 </div>
                 <div>
-                    <div class="text-xs font-bold text-white tracking-wide">OPERATOR_01</div>
+                    <!-- Nama User -->
+                    <div id="user-name" class="text-xs font-bold text-white tracking-wide">LOADING...</div>
                     <div class="text-[9px] font-mono text-warkops-success flex items-center gap-1">
                         <span class="w-1.5 h-1.5 bg-warkops-success rounded-full animate-pulse"></span>
-                        ONLINE
+                        <span id="user-role" class="uppercase">ONLINE</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Navigation Menu -->
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto z-10 font-mono text-xs">
-            
-            <!-- Menu Group -->
             <div class="text-[9px] text-warkops-muted uppercase tracking-widest mb-2 mt-2 px-2">Main Module</div>
 
             <a href="#home" class="flex items-center gap-3 px-3 py-3 text-warkops-muted hover:text-white hover:bg-white/5 transition-all nav-item-clip nav-active group">
@@ -90,19 +86,23 @@
                 <svg class="w-4 h-4 group-hover:text-warkops-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                 <span class="tracking-wider">ANALYTICS</span>
             </a>
-
-            <a href="#users" class="flex items-center gap-3 px-3 py-3 text-warkops-muted hover:text-white hover:bg-white/5 transition-all nav-item-clip group">
-                <svg class="w-4 h-4 group-hover:text-warkops-success transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
+            
+            <!-- 
+               PERBAIKAN: 
+               1. Hapus div wrapper.
+               2. Tambahkan class 'flex' yang tadi hilang.
+               3. Taruh ID 'nav-users' langsung di sini.
+            -->
+            <a href="#users" id="nav-users" class="hidden flex items-center gap-3 px-3 py-3 text-warkops-muted hover:text-white hover:bg-white/5 transition-all nav-item-clip group">
+                <svg class="w-4 h-4 group-hover:text-warkops-success transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 <span class="tracking-wider">OPERATORS</span>
             </a>
-
+            
         </nav>
 
         <!-- Bottom Actions -->
         <div class="p-4 border-t border-white/5 z-10">
-            <button onclick="window.location.href='index.html'" class="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-red-900/30 hover:text-red-400 text-warkops-muted p-2 text-xs font-mono transition-all border border-transparent hover:border-red-500/30">
+            <button onclick="Auth.logout()" class="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-red-900/30 hover:text-red-400 text-warkops-muted p-2 text-xs font-mono transition-all border border-transparent hover:border-red-500/30">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 LOGOUT_SESSION
             </button>
@@ -111,11 +111,7 @@
 
     <!-- === MAIN CONTENT AREA === -->
     <main class="flex-1 flex flex-col relative overflow-hidden">
-        
-        <!-- Header / Top Bar -->
         <header class="h-16 border-b border-white/5 bg-warkops-bg/80 backdrop-blur-md flex items-center justify-between px-6 z-10 sticky top-0">
-            
-            <!-- Breadcrumbs / Page Title -->
             <div class="flex items-center gap-4">
                 <div class="h-6 w-[2px] bg-warkops-primary"></div>
                 <h2 class="text-lg font-display font-bold tracking-tight text-white uppercase" id="page-title">
@@ -123,7 +119,6 @@
                 </h2>
             </div>
 
-            <!-- Header Actions -->
             <div class="flex items-center gap-4">
                 <div class="text-right hidden md:block">
                     <div class="text-[10px] text-warkops-muted font-mono">SERVER_TIME</div>
@@ -136,41 +131,51 @@
             </div>
         </header>
 
-        <!-- Content Injector (View loaded here) -->
         <div id="content" class="flex-1 overflow-y-auto p-6 relative">
-            
-            <!-- Default Content (Loading) -->
             <div class="flex items-center justify-center h-full text-warkops-muted font-mono text-sm animate-pulse">
                 INITIALIZING VIEW...
             </div>
-
         </div>
-
     </main>
 
-    <!-- JS untuk Jam & Navigasi Sederhana -->
+    <!-- Script Utama -->
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ambil user langsung dari Auth untuk memastikan data terbaru
+            const user = Auth.getUser();
+
+            if (user) {
+                document.getElementById('user-name').innerText = user.name.toUpperCase();
+                document.getElementById('user-role').innerText = user.role.toUpperCase() + " ACCESS";
+                document.getElementById('user-avatar').innerText = user.name.substring(0,2).toUpperCase();
+
+                // 2. LOGIKA SIDEBAR PER ROLE (RBAC UI)
+                // Cek role dari user object yang diambil langsung
+                if (user.role === 'admin') {
+                    const usersNav = document.getElementById('nav-users');
+                    // Hapus class 'hidden' untuk menampilkan menu
+                    if (usersNav) usersNav.classList.remove('hidden');
+                }
+            }
+        });
+
         // Realtime Clock
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB');
         }, 1000);
 
-        // Simple Active State (Placeholder logic)
+        // Active State Handler
         const navLinks = document.querySelectorAll('nav a');
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 navLinks.forEach(l => l.classList.remove('nav-active'));
                 e.currentTarget.classList.add('nav-active');
-                
-                // Update Title
                 const title = e.currentTarget.querySelector('span').innerText;
                 document.getElementById('page-title').innerText = title;
             });
         });
     </script>
-
     <script src="js/router.js"></script>
-
 </body>
 </html>

@@ -6,164 +6,129 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
-require_once "db.php";
+require_once 'config.php';
+require_once 'db.php';
 
-// Untuk menangani preflight
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
-// Helper fungsi respon
-function responseJSON($success, $message, $data = null) {
-    echo json_encode([
-        "success" => $success,
-        "message" => $message,
-        "data"    => $data
-    ]);
-    exit();
+$pdo = connectDB();
+$method = $_SERVER['REQUEST_METHOD'];
+
+try {
+    switch ($method) {
+        case 'GET':
+            handleGet($pdo);
+            break;
+        case 'POST':
+            handlePost($pdo);
+            break;
+        case 'PUT':
+            handlePut($pdo);
+            break;
+        case 'DELETE':
+            handleDelete($pdo);
+            break;
+        default:
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
-$method = $_SERVER["REQUEST_METHOD"];
-
-// ===========================
-// 1. GET (READ)
-// ===========================
-if ($method === "GET") {
-
-    // GET /api/items.php?id=1 → ambil detail menu
+function handleGet($pdo) {
     if (isset($_GET['id'])) {
-        $id = intval($_GET['id']);
-        $q = $conn->prepare("
+        $stmt = $pdo->prepare("
             SELECT m.*, c.name AS category_name 
             FROM menu m 
             LEFT JOIN categories c ON m.category_id = c.category_id
             WHERE m.menu_id = ?
         ");
-        $q->bind_param("i", $id);
-        $q->execute();
-        $res = $q->get_result()->fetch_assoc();
-
-        if (!$res) responseJSON(false, "Menu not found");
-        responseJSON(true, "Detail menu", $res);
-    }
-
-    // GET /api/items.php → ambil semua menu
-    $sql = "
-        SELECT m.*, c.name AS category_name 
-        FROM menu m 
-        LEFT JOIN categories c ON m.category_id = c.category_id
-        ORDER BY m.menu_id DESC
-    ";
-
-    $result = $conn->query($sql);
-    $data = [];
-
-    while ($row = $result->fetch_assoc()) {
-        $data[] = $row;
-    }
-
-    responseJSON(true, "List menu", $data);
-}
-
-
-// ===========================
-// 2. POST (CREATE)
-// ===========================
-if ($method === "POST") {
-    $input = json_decode(file_get_contents("php://input"), true);
-
-    if (!$input || !isset($input['name']) || !isset($input['price'])) {
-        responseJSON(false, "Missing required fields (name, price)");
-    }
-
-    $name        = $input['name'];
-    $desc        = $input['description'] ?? null;
-    $price       = $input['price'];
-    $category_id = $input['category_id'] ?? null;
-    $is_available = $input['is_available'] ?? 1;
-
-    $q = $conn->prepare("
-        INSERT INTO menu (name, description, price, category_id, is_available) 
-        VALUES (?, ?, ?, ?, ?)
-    ");
-
-    $q->bind_param("ssdii",
-        $name,
-        $desc,
-        $price,
-        $category_id,
-        $is_available
-    );
-
-    if ($q->execute()) {
-        responseJSON(true, "Menu added successfully", ["menu_id" => $conn->insert_id]);
+        $stmt->execute([$_GET['id']]);
+        $data = $stmt->fetch();
+        
+        if ($data) {
+            echo json_encode(['success' => true, 'data' => $data]);
+        } else {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Menu not found']);
+        }
     } else {
-        responseJSON(false, "Failed to add menu");
+        $stmt = $pdo->query("
+            SELECT m.*, c.name AS category_name 
+            FROM menu m 
+            LEFT JOIN categories c ON m.category_id = c.category_id
+            ORDER BY m.menu_id DESC
+        ");
+        echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
     }
 }
 
-
-// ===========================
-// 3. PUT (UPDATE)
-// ===========================
-if ($method === "PUT") {
-    $input = json_decode(file_get_contents("php://input"), true);
-
-    if (!$input || !isset($input['menu_id'])) {
-        responseJSON(false, "menu_id is required");
+function handlePost($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (empty($data['name']) || empty($data['price'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Name and Price required']);
+        return;
     }
 
-    $menu_id     = $input['menu_id'];
-    $name        = $input['name'];
-    $desc        = $input['description'] ?? null;
-    $price       = $input['price'];
-    $category_id = $input['category_id'] ?? null;
-    $is_available = $input['is_available'] ?? 1;
+    $sql = "INSERT INTO menu (name, description, price, category_id, is_available) VALUES (?, ?, ?, ?, ?)";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $data['name'],
+        $data['description'] ?? '',
+        $data['price'],
+        $data['category_id'] ?? null,
+        $data['is_available'] ?? 1
+    ]);
 
-    $q = $conn->prepare("
-        UPDATE menu 
-        SET name=?, description=?, price=?, category_id=?, is_available=? 
-        WHERE menu_id=?
-    ");
-
-    $q->bind_param("ssdi ii",
-        $name,
-        $desc,
-        $price,
-        $category_id,
-        $is_available,
-        $menu_id
-    );
-
-    if ($q->execute()) {
-        responseJSON(true, "Menu updated successfully");
-    } else {
-        responseJSON(false, "Failed to update menu");
-    }
+    echo json_encode(['success' => true, 'message' => 'Menu added', 'id' => $pdo->lastInsertId()]);
 }
 
-
-// ===========================
-// 4. DELETE
-// ===========================
-if ($method === "DELETE") {
-    parse_str(file_get_contents("php://input"), $input);
-
-    if (!isset($input['menu_id'])) {
-        responseJSON(false, "menu_id is required");
+function handlePut($pdo) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (empty($data['menu_id'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Menu ID required']);
+        return;
     }
 
-    $menu_id = intval($input['menu_id']);
+    $sql = "UPDATE menu SET name=?, description=?, price=?, category_id=?, is_available=? WHERE menu_id=?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $data['name'],
+        $data['description'] ?? '',
+        $data['price'],
+        $data['category_id'] ?? null,
+        $data['is_available'] ?? 1,
+        $data['menu_id']
+    ]);
 
-    $q = $conn->prepare("DELETE FROM menu WHERE menu_id = ?");
-    $q->bind_param("i", $menu_id);
-
-    if ($q->execute()) {
-        responseJSON(true, "Menu deleted successfully");
-    } else {
-        responseJSON(false, "Failed to delete menu");
-    }
+    echo json_encode(['success' => true, 'message' => 'Menu updated']);
 }
 
-responseJSON(false, "Invalid method");
+function handleDelete($pdo) {
+    $id = $_GET['id'] ?? null;
+    if (!$id) {
+        // Coba ambil dari body jika query param kosong (untuk kompatibilitas)
+        $data = json_decode(file_get_contents("php://input"), true);
+        $id = $data['menu_id'] ?? null;
+    }
+
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Menu ID required']);
+        return;
+    }
+
+    $stmt = $pdo->prepare("DELETE FROM menu WHERE menu_id = ?");
+    $stmt->execute([$id]);
+    echo json_encode(['success' => true, 'message' => 'Menu deleted']);
+}
+?>

@@ -1,6 +1,6 @@
 <?php
-require_once '../config.php';
-require_once '../db.php';
+require_once 'config.php';
+require_once 'db.php';
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");

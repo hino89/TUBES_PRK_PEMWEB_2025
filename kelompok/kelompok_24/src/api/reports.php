@@ -1,6 +1,6 @@
 <?php
-require_once '../config.php';
-require_once '../db.php';
+require_once 'config.php';
+require_once 'db.php';
 
 header('Content-Type: application/json');
 
@@ -15,55 +15,64 @@ $end   = get('end_date');
 $operator = get('operator_id', 'all');
 $limit = intval(get('limit', 15));
 
+// Default date jika tidak ada param
 if (!$start || !$end) {
-    echo json_encode([
-        "success" => false,
-        "message" => "Missing start or end date."
-    ]);
-    exit;
+    $start = date('Y-m-d', strtotime('-7 days'));
+    $end = date('Y-m-d');
 }
 
 // =======================
-// LOAD OPERATORS
+// 1. LOAD OPERATORS
 // =======================
+// Mengambil daftar kasir untuk filter dropdown
 $operators = $pdo->query("
-    SELECT id, username AS label, username 
+    SELECT user_id as id, username AS label, username 
     FROM users
 ")->fetchAll();
 
 // =======================
-// LOAD METRICS
+// 2. LOAD METRICS
 // =======================
-$metrics = $pdo->prepare("
+// Menggunakan tabel 'transactions' dan 'transaction_items'
+$metricsSql = "
     SELECT 
-        SUM(orders.total) AS total_revenue,
+        COALESCE(SUM(t.total), 0) AS total_revenue,
         COUNT(*) AS total_transactions,
         (
-            SELECT items.name FROM order_items
-            JOIN items ON order_items.item_id = items.id
-            GROUP BY item_id
-            ORDER BY SUM(order_items.quantity) DESC
+            SELECT m.name 
+            FROM transaction_items ti
+            JOIN menu m ON ti.menu_id = m.menu_id
+            JOIN transactions t2 ON ti.trx_id = t2.trx_id
+            WHERE DATE(t2.datetime) BETWEEN ? AND ?
+            GROUP BY ti.menu_id
+            ORDER BY SUM(ti.qty) DESC
             LIMIT 1
         ) AS best_seller_name,
         (
-            SELECT SUM(order_items.quantity) FROM order_items
-            GROUP BY item_id
-            ORDER BY SUM(order_items.quantity) DESC
+            SELECT COALESCE(SUM(ti.qty), 0)
+            FROM transaction_items ti
+            JOIN transactions t3 ON ti.trx_id = t3.trx_id
+            WHERE DATE(t3.datetime) BETWEEN ? AND ?
+            GROUP BY ti.menu_id
+            ORDER BY SUM(ti.qty) DESC
             LIMIT 1
         ) AS best_seller_units,
-        0.25 AS profit_margin
-    FROM orders
-    WHERE DATE(datetime) BETWEEN ? AND ?
-");
-$metrics->execute([$start, $end]);
-$metrics = $metrics->fetch();
+        0.40 AS profit_margin -- Hardcoded estimasi 40%
+    FROM transactions t
+    WHERE DATE(t.datetime) BETWEEN ? AND ?
+";
+
+$metricsStmt = $pdo->prepare($metricsSql);
+// Parameter harus diulang karena subquery butuh date range juga
+$metricsStmt->execute([$start, $end, $start, $end, $start, $end]);
+$metrics = $metricsStmt->fetch();
 
 // =======================
-// DAILY SALES FOR CHART
+// 3. DAILY SALES CHART
 // =======================
 $chart = $pdo->prepare("
     SELECT DATE(datetime) AS date, SUM(total) AS value
-    FROM orders
+    FROM transactions
     WHERE DATE(datetime) BETWEEN ? AND ?
     GROUP BY DATE(datetime)
     ORDER BY DATE(datetime)
@@ -77,33 +86,34 @@ foreach ($chartRows as $r) {
 }
 
 // =======================
-// TRANSACTION HISTORY
+// 4. TRANSACTION HISTORY
 // =======================
+// Query kompleks dengan JOIN user dan GROUP_CONCAT item
 $sql = "
     SELECT 
-        o.id AS trx_id,
-        o.datetime,
-        o.total,
-        o.status,
+        t.trx_id,
+        t.datetime,
+        t.total,
+        'PAID' as status, -- Default status karena kita belum handle void/unpaid
         u.username AS operator_username,
         (
-            SELECT GROUP_CONCAT(CONCAT(oi.quantity, 'x ', it.name) SEPARATOR ', ')
-            FROM order_items oi
-            JOIN items it ON it.id = oi.item_id
-            WHERE oi.order_id = o.id
+            SELECT GROUP_CONCAT(CONCAT(ti.qty, 'x ', m.name) SEPARATOR ', ')
+            FROM transaction_items ti
+            JOIN menu m ON m.menu_id = ti.menu_id
+            WHERE ti.trx_id = t.trx_id
         ) AS item_summary
-    FROM orders o
-    LEFT JOIN users u ON u.id = o.operator_id
-    WHERE DATE(o.datetime) BETWEEN ? AND ?
+    FROM transactions t
+    LEFT JOIN users u ON u.user_id = t.user_id
+    WHERE DATE(t.datetime) BETWEEN ? AND ?
 ";
 $params = [$start, $end];
 
 if ($operator !== 'all') {
-    $sql .= " AND o.operator_id = ? ";
+    $sql .= " AND t.user_id = ? ";
     $params[] = $operator;
 }
 
-$sql .= " ORDER BY o.datetime DESC LIMIT ?";
+$sql .= " ORDER BY t.datetime DESC LIMIT ?";
 $params[] = $limit;
 
 $stmt = $pdo->prepare($sql);
@@ -124,4 +134,4 @@ echo json_encode([
     "daily_sales" => $daily_sales,
     "transaction_history" => $history
 ]);
-
+?>

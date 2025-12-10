@@ -1,88 +1,107 @@
 <!-- src/views/users.html -->
+<div class="space-y-6">
 
-<div class="p-6 w-full h-full text-warkops-text font-sans">
-
-    <!-- Header -->
-    <div class="mb-6 relative">
-        <h1 class="text-3xl font-display tracking-wide text-warkops-primary">
-            User Management
-        </h1>
-        <p class="text-warkops-muted text-sm mt-1">
-            Manage staff operators, roles, and access levels.
-        </p>
-
-        <!-- Decorative retro elements -->
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-seigaiha opacity-20"></div>
-    </div>
-
-    <!-- Add User -->
-    <button
-        onclick="openAddUserModal()"
-        class="px-4 py-2 mb-4 rounded-lg bg-warkops-primary text-warkops-dark font-bold shadow hover:opacity-90 transition">
-        + Add Operator
-    </button>
-
-    <!-- Table Container -->
-    <div class="bg-warkops-panel rounded-xl p-4 shadow-lg border border-warkops-surface">
-        <table class="w-full text-left text-sm">
-            <thead class="border-b border-warkops-surface text-warkops-muted">
-                <tr>
-                    <th class="py-2">Name</th>
-                    <th class="py-2">Email</th>
-                    <th class="py-2">Role</th>
-                    <th class="py-2">Status</th>
-                    <th class="py-2 text-right">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="userTable"></tbody>
-        </table>
-    </div>
-</div>
-
-<!-- MODAL -->
-<div id="userModal"
-     class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-
-    <div class="bg-warkops-panel p-6 rounded-xl w-96 border border-warkops-primary shadow-xl relative">
-
-        <!-- Decorative pattern -->
-        <div class="absolute top-2 right-2 w-14 h-14 bg-stripes opacity-20"></div>
-
-        <h2 id="modalTitle" class="text-xl font-display mb-4 text-warkops-primary"></h2>
-
-        <div class="space-y-3">
-            <input id="nameInput" type="text" placeholder="Name"
-                   class="w-full px-3 py-2 rounded bg-warkops-surface border border-warkops-muted" />
-
-            <input id="emailInput" type="email" placeholder="Email"
-                   class="w-full px-3 py-2 rounded bg-warkops-surface border border-warkops-muted" />
-
-            <select id="roleInput"
-                    class="w-full px-3 py-2 rounded bg-warkops-surface border border-warkops-muted">
-                <option>Admin</option>
-                <option>Cashier</option>
-                <option>Staff</option>
-            </select>
-
-            <select id="statusInput"
-                    class="w-full px-3 py-2 rounded bg-warkops-surface border border-warkops-muted">
-                <option>Active</option>
-                <option>Inactive</option>
-            </select>
+    <!-- Header & Action Bar -->
+    <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 border-b border-white/5 pb-6">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 bg-warkops-success rounded-full animate-pulse"></span>
+                <p class="text-[10px] font-mono uppercase tracking-[0.2em] text-warkops-muted">Personnel Database</p>
+            </div>
+            <h2 class="text-3xl font-display font-black tracking-tight text-white">OPERATOR MANAGEMENT</h2>
+            <p class="text-xs text-warkops-muted mt-1 font-mono max-w-lg">
+                Manage access rights and operator profiles. Only Admin clearance level can modify this data.
+            </p>
         </div>
+        
+        <button onclick="UsersController.toggleModal(true)" class="group relative px-6 py-3 bg-warkops-primary text-black font-bold font-mono text-xs uppercase overflow-hidden transition-all hover:brightness-110 shadow-[0_0_15px_rgba(244,63,94,0.4)]">
+            <span class="relative z-10 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Recruit New Operator
+            </span>
+            <!-- Glitch Effect Bg -->
+            <div class="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-0"></div>
+        </button>
+    </div>
 
-        <div class="flex justify-between mt-6">
-            <button onclick="closeModal()"
-                    class="px-4 py-2 rounded bg-warkops-surface text-warkops-muted hover:opacity-80">
-                Cancel
-            </button>
-
-            <button onclick="saveUser()"
-                    class="px-4 py-2 rounded bg-warkops-primary text-warkops-dark font-bold hover:opacity-90">
-                Save
-            </button>
+    <!-- Users Grid Container -->
+    <div id="users-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+        <!-- Card User akan di-inject disini oleh JS -->
+        <div class="col-span-full flex flex-col items-center justify-center py-12 opacity-50">
+            <div class="w-8 h-8 border-2 border-warkops-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+            <div class="font-mono text-xs text-warkops-primary">ESTABLISHING CONNECTION TO DB...</div>
         </div>
     </div>
-</div>
 
-<!-- <script src="src/js/controllers/users.js"></script> -->
+    <!-- === MODAL ADD USER === -->
+    <div id="user-modal" class="fixed inset-0 z-50 hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onclick="UsersController.toggleModal(false)"></div>
+        
+        <!-- Modal Content -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-warkops-panel border-l-4 border-warkops-primary shadow-[0_0_50px_rgba(0,0,0,0.5)] p-1">
+            
+            <!-- Deco Header -->
+            <div class="absolute -top-3 left-0 bg-warkops-primary text-black text-[9px] font-bold px-2 py-0.5 font-mono">NEW_ENTRY</div>
+
+            <div class="bg-warkops-bg p-6 border border-white/5 relative">
+                
+                <div class="mb-6 flex justify-between items-center border-b border-white/5 pb-4">
+                    <div>
+                        <h3 class="font-display font-bold text-xl text-white">RECRUITMENT FORM</h3>
+                        <p class="text-[10px] text-warkops-muted font-mono">Input operator credentials carefully.</p>
+                    </div>
+                    <button onclick="UsersController.toggleModal(false)" class="text-warkops-muted hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <form onsubmit="UsersController.addUser(event)" class="space-y-4">
+                    
+                    <div class="space-y-1 group">
+                        <label class="text-[10px] font-mono text-warkops-secondary uppercase group-focus-within:text-warkops-primary">Full Name</label>
+                        <input type="text" name="full_name" required 
+                            class="w-full bg-warkops-surface border border-white/10 p-2 text-white text-sm focus:border-warkops-primary focus:outline-none placeholder-white/20 transition-colors" 
+                            placeholder="e.g. Amiya">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1 group">
+                            <label class="text-[10px] font-mono text-warkops-secondary uppercase group-focus-within:text-warkops-primary">Operator ID</label>
+                            <input type="text" name="username" required 
+                                class="w-full bg-warkops-surface border border-white/10 p-2 text-white text-sm focus:border-warkops-primary focus:outline-none placeholder-white/20 transition-colors" 
+                                placeholder="KASIR_0X">
+                        </div>
+                        <div class="space-y-1 group">
+                            <label class="text-[10px] font-mono text-warkops-secondary uppercase group-focus-within:text-warkops-primary">Role Access</label>
+                            <select name="role" class="w-full bg-warkops-surface border border-white/10 p-2 text-white text-sm focus:border-warkops-primary focus:outline-none transition-colors">
+                                <option value="kasir">KASIR / STAFF</option>
+                                <option value="admin">ADMIN / LEADER</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1 group">
+                        <label class="text-[10px] font-mono text-warkops-secondary uppercase group-focus-within:text-warkops-primary">Access Key (Password)</label>
+                        <input type="password" name="password" required 
+                            class="w-full bg-warkops-surface border border-white/10 p-2 text-white text-sm focus:border-warkops-primary focus:outline-none placeholder-white/20 transition-colors" 
+                            placeholder="••••••••">
+                    </div>
+
+                    <div class="pt-4 flex gap-3">
+                         <button type="button" onclick="UsersController.toggleModal(false)" class="flex-1 py-3 border border-white/10 text-warkops-muted font-mono text-xs hover:text-white hover:bg-white/5 transition">
+                            CANCEL
+                        </button>
+                        <button type="submit" class="flex-[2] bg-warkops-primary text-black font-bold py-3 uppercase tracking-wider font-mono hover:bg-white transition-colors relative overflow-hidden group">
+                            <span class="relative z-10">CONFIRM</span>
+                            <div class="absolute inset-0 bg-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-200 z-0"></div>
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+</div>

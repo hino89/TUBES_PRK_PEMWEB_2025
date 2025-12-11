@@ -1,4 +1,6 @@
 <?php
+ob_start();
+
 require_once 'config.php'; 
 
 function connectDB() {
@@ -11,14 +13,22 @@ function connectDB() {
 
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        
+        ob_clean();
+        
         return $pdo;
     } catch (\PDOException $e) {
+        
+        ob_end_clean();
+        
         error_log("Database Connection Error: " . $e->getMessage());
+        
+        header("Content-Type: application/json");
         http_response_code(500); 
+        
         die(json_encode([
             'success' => false, 
-            'message' => 'Terjadi kesalahan koneksi database.'
+            'message' => 'Terjadi kesalahan koneksi database: ' . $e->getMessage()
         ]));
     }
 }
-?>

@@ -43,10 +43,13 @@ try {
 function handleGet($pdo) {
     if (isset($_GET['id'])) {
         $stmt = $pdo->prepare("
-            SELECT m.*, c.name AS category_name 
+            SELECT m.*, c.name AS category_name, 
+                   COUNT(mr.menu_id) AS recipe_count
             FROM menu m 
             LEFT JOIN categories c ON m.category_id = c.category_id
+            LEFT JOIN menu_recipes mr ON m.menu_id = mr.menu_id
             WHERE m.menu_id = ?
+            GROUP BY m.menu_id
         ");
         $stmt->execute([$_GET['id']]);
         $data = $stmt->fetch();
@@ -58,10 +61,14 @@ function handleGet($pdo) {
             echo json_encode(['success' => false, 'message' => 'Menu not found']);
         }
     } else {
+        // Query untuk mengambil semua menu (Dibutuhkan oleh POS)
         $stmt = $pdo->query("
-            SELECT m.*, c.name AS category_name 
+            SELECT m.*, c.name AS category_name,
+                   COUNT(mr.menu_id) AS recipe_count 
             FROM menu m 
             LEFT JOIN categories c ON m.category_id = c.category_id
+            LEFT JOIN menu_recipes mr ON m.menu_id = mr.menu_id
+            GROUP BY m.menu_id
             ORDER BY m.menu_id DESC
         ");
         echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
@@ -116,7 +123,6 @@ function handlePut($pdo) {
 function handleDelete($pdo) {
     $id = $_GET['id'] ?? null;
     if (!$id) {
-        // Coba ambil dari body jika query param kosong (untuk kompatibilitas)
         $data = json_decode(file_get_contents("php://input"), true);
         $id = $data['menu_id'] ?? null;
     }

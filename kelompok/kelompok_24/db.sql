@@ -129,3 +129,23 @@ CREATE TABLE inventory_logs (
 
 CREATE INDEX idx_inventory_logs_ingredient ON inventory_logs(ingredient_id);
 CREATE INDEX idx_inventory_logs_date ON inventory_logs(created_at);
+
+-- 1. Tabel Master Topping (Daftar Modifier)
+CREATE TABLE menu_modifiers (
+    modifier_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    ingredient_id INT, 
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (ingredient_id) REFERENCES ingredients(ingredient_id)
+) ENGINE=InnoDB;
+
+-- 2. Tabel Transaksi Topping (Pivot / Penghubung)
+CREATE TABLE transaction_item_modifiers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    trx_item_id INT NOT NULL, 
+    modifier_id INT NOT NULL, 
+    price DECIMAL(10, 2) NOT NULL, 
+    FOREIGN KEY (trx_item_id) REFERENCES transaction_items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (modifier_id) REFERENCES menu_modifiers(modifier_id)
+) ENGINE=InnoDB;

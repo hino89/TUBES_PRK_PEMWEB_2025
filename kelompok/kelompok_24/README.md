@@ -60,8 +60,8 @@ Ikuti langkah-langkah ini untuk menjalankan WarkOps di lokal komputer Anda:
 ### 1. Persiapan Database
 1.  Pastikan **XAMPP** (Apache & MySQL) sudah berjalan.
 2.  Buka [phpMyAdmin](http://localhost/phpmyadmin).
-3.  Buat database baru dengan nama: `tubes_pemweb`.
-4.  Import file SQL yang ada di folder ini: `database.sql`.
+3.  Buat database baru dengan nama: `warkops_db`.
+4.  Import file SQL yang ada di folder ini: `db.sql`.
 
 ### 2. Konfigurasi Koneksi
 1.  Buka file `src/api/config.php`.
@@ -90,14 +90,17 @@ Ikuti langkah-langkah ini untuk menjalankan WarkOps di lokal komputer Anda:
 
 ## 📸 Screenshots
 
-| Login Page (Retro Style) | Dashboard & POS |
+| Login Page (Retro Style) | Dashboard Utama |
 | :---: | :---: |
-| *(Screenshot Login)* | *(Screenshot Dashboard)* |
+| <img src="screenshots/login.png" width="400"> | <img src="screenshots/dashboard.png" width="400"> |
 
-| Manajemen Inventory | Laporan Penjualan |
+| Manajemen Inventory | Dashboard POS |
 | :---: | :---: |
-| *(Screenshot Inventory)* | *(Screenshot Laporan)* |
+| <img src="screenshots/inventory.png" width="400"> | <img src="screenshots/analytics.png" width="400"> |
 
+| Manajemen Users | Laporan Penjualan |
+| :---: | :---: |
+| <img src="screenshots/users.png" width="400"> | <img src="screenshots/analytics.png" width="400"> |
 ---
 
 ## 📂 Struktur Folder

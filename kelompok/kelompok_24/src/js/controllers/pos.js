@@ -6,8 +6,7 @@
 
 (function (window, document) {
     'use strict';
-
-    const BASE_URL_API = 'http://localhost:8080/TUBES_PRK_PEMWEB_2025/kelompok/kelompok_24/src/api/'; 
+    const BASE_URL_API = 'http://localhost:8080/TUBES_PRK_PEMWEB_2025/kelompok/kelompok_24/src/api/';
     
     const MENU_API = BASE_URL_API + 'items.php';
     const CATEGORIES_API = BASE_URL_API + 'categories.php';

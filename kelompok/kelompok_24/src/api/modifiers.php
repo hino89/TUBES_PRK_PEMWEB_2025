@@ -22,4 +22,3 @@ try {
         'message' => $e->getMessage()
     ]);
 }
-?>

@@ -7,11 +7,12 @@
 (function (window, document) {
     'use strict';
 
-    const API_BASE = 'api/';
-    const MENU_API = API_BASE + 'items.php';
-    const CATEGORIES_API = API_BASE + 'categories.php';
-    const MODIFIERS_API = API_BASE + 'modifiers.php';
-    const TRANSACTIONS_API = API_BASE + 'orders.php';
+    const BASE_URL_API = 'http://localhost:8080/TUBES_PRK_PEMWEB_2025/kelompok/kelompok_24/src/api/'; 
+    
+    const MENU_API = BASE_URL_API + 'items.php';
+    const CATEGORIES_API = BASE_URL_API + 'categories.php';
+    const MODIFIERS_API = BASE_URL_API + 'modifiers.php';
+    const TRANSACTIONS_API = BASE_URL_API + 'orders.php';
 
     const TAX_RATE = 0.10;
     const currency = new Intl.NumberFormat('id-ID', {

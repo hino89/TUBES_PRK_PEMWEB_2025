@@ -148,3 +148,36 @@
 
     </div>
 </div>
+
+<div id="modifier-modal" class="fixed inset-0 z-[99] hidden flex items-center justify-center bg-black/90 backdrop-blur-sm transition-opacity duration-300">
+    <div class="bg-warkops-panel border border-white/10 w-full max-w-md p-6 shadow-2xl relative animate-slide-up transform transition-all">
+        
+        <div class="border-b border-white/10 pb-4 mb-4">
+            <h3 class="font-mono text-xs text-warkops-muted uppercase tracking-widest mb-1">CUSTOMIZE ORDER</h3>
+            <h2 id="modal-item-name" class="font-display font-bold text-2xl text-white leading-none">...</h2>
+            <div id="modal-base-price" class="font-mono text-warkops-primary text-sm mt-1">Rp 0</div>
+        </div>
+        
+        <div class="mb-6">
+            <div class="text-[10px] text-warkops-muted font-mono uppercase mb-3">ADD-ONS (OPTIONAL)</div>
+            <div id="modal-modifiers-list" class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                <div class="text-xs text-warkops-muted animate-pulse">Loading toppings...</div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-6 bg-black/40 p-3 border border-white/5">
+            <span class="text-xs font-mono text-warkops-muted">ESTIMATED TOTAL</span>
+            <span id="modal-total-price" class="text-lg font-bold text-white font-mono">Rp 0</span>
+        </div>
+
+        <div class="flex gap-3">
+            <button id="btn-cancel-mod" class="flex-1 py-3 border border-white/10 text-warkops-muted hover:text-white hover:bg-white/5 font-mono text-xs uppercase tracking-wider transition-all">
+                CANCEL
+            </button>
+            <button id="btn-confirm-mod" class="flex-1 py-3 bg-warkops-primary text-black font-display font-black text-sm uppercase tracking-wide hover:brightness-110 shadow-[0_0_15px_rgba(244,63,94,0.4)] transition-all">
+                ADD TO CART
+            </button>
+        </div>
+
+    </div>
+</div>

@@ -92,11 +92,11 @@ Ikuti langkah-langkah ini untuk menjalankan WarkOps di lokal komputer Anda:
 
 | Login Page (Retro Style) | Dashboard Utama |
 | :---: | :---: |
-| <img src="screenshots/login.PNG" width="400"> | <img src="screenshots/dashboard.PNG" width="400"> |
+| <img src="screenshots/login.PNG" width="400"> | <img src="screenshots/dashboard_main.PNG" width="400"> |
 
 | Manajemen Inventory | Dashboard POS |
 | :---: | :---: |
-| <img src="screenshots/inventory.PNG" width="400"> | <img src="screenshots/analytics.PNG" width="400"> |
+| <img src="screenshots/inventory.PNG" width="400"> | <img src="screenshots/pos.PNG" width="400"> |
 
 | Manajemen Users | Laporan Penjualan |
 | :---: | :---: |

@@ -1,6 +1,7 @@
 /**
  * src/js/controllers/pos.js
- * Point of Sales Terminal Controller - WarkOps Theme
+ * Controller POS: Handle Menu, Cart, & Checkout
+ * FIX: Perbaikan pengambilan ID User saat checkout
  */
 
 (function (window, document) {
@@ -102,7 +103,6 @@
 
         nodes.categoryTabs.innerHTML = html;
 
-        // Bind category filter
         document.querySelectorAll('.category-tab').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const categoryId = e.currentTarget.dataset.category;
@@ -253,7 +253,6 @@
 
         nodes.cartItems.innerHTML = html;
 
-        // Calculate totals
         const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         const tax = subtotal * TAX_RATE;
         const total = subtotal + tax;
@@ -315,14 +314,16 @@
             return;
         }
 
+        // AMBIL USER DARI window.Auth (Fix user tidak terdeteksi)
         const currentUser = window.Auth?.getUser();
         if (!currentUser) {
-            showToast('error', 'User tidak terdeteksi');
+            showToast('error', 'User tidak terdeteksi. Silakan login ulang.');
             return;
         }
 
+        // FIX: Gunakan currentUser.id (bukan user_id) sesuai struktur session di auth.php
         const payload = {
-            user_id: currentUser.user_id,
+            user_id: currentUser.id, 
             table_no: document.getElementById('table-no')?.value || null,
             discount: 0,
             tax: tax,
@@ -344,7 +345,6 @@
             if (result.success) {
                 const trxId = result.data.trx_id;
 
-                // Update payment info
                 await fetch(TRANSACTIONS_API, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -387,7 +387,6 @@
         }
     }
 
-    // Public API
     window.PosController = {
         init,
         addToCart,

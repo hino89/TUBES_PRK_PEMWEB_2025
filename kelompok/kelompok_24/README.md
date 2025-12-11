@@ -84,7 +84,7 @@ Ikuti langkah-langkah ini untuk menjalankan WarkOps di lokal komputer Anda:
     *(Catatan: Browser harus terhubung ke Internet untuk memuat Tailwind CSS via CDN).*
 
 3.  **Login :**
-    Untuk login silahkan cek docs/initial_seeding.md
+    Untuk login silahkan cek docs/initial_seeding.md atau gunakan docs/seeder.sql
 
 ---
 

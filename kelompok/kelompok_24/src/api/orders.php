@@ -21,9 +21,6 @@ function jsonOut($success, $message, $data = null) {
 
 $method = $_SERVER["REQUEST_METHOD"];
 
-// ===================================================================
-// GET — LIST TRANSACTIONS OR DETAIL
-// ===================================================================
 if ($method == "GET") {
 
     if (isset($_GET["trx_id"])) {
@@ -42,21 +39,28 @@ if ($method == "GET") {
             WHERE trx_id = ?
         ");
         $stmt->execute([$trx_id]);
-        $items = $stmt->fetchAll();
+        $items = $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($items as &$item) {
+            $stmt_mod = $pdo->prepare("
+                SELECT tim.*, mm.name 
+                FROM transaction_item_modifiers tim
+                JOIN menu_modifiers mm ON tim.modifier_id = mm.modifier_id
+                WHERE tim.trx_item_id = ?
+            ");
+            $stmt_mod->execute([$item['item_id']]);
+            $item["modifiers"] = $stmt_mod->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         $trx["items"] = $items;
         jsonOut(true, "Transaction detail", $trx);
     }
 
-    // Otherwise list all
     $rows = $pdo->query("SELECT * FROM transactions ORDER BY trx_id DESC")->fetchAll();
     jsonOut(true, "List of transactions", $rows);
 }
 
 
-// ===================================================================
-// POST — CHECKOUT / CREATE TRANSACTION
-// ===================================================================
 if ($method == "POST") {
     $data = json_decode(file_get_contents("php://input"), true);
 
@@ -70,28 +74,16 @@ if ($method == "POST") {
     $discount = $data["discount"] ?? 0;
     $tax = $data["tax"] ?? 0;
 
-    // ===============================
-    // HITUNG SUBTOTAL
-    // ===============================
     $subtotal = 0;
-
     foreach ($items as $it) {
-        $stmt = $pdo->prepare("SELECT price FROM menu WHERE menu_id = ?");
-        $stmt->execute([$it["menu_id"]]);
-        $price = $stmt->fetchColumn();
-
-        if ($price === false) jsonOut(false, "Menu ID {$it['menu_id']} not found.");
-
-        $subtotal += $price * $it["qty"];
+        $subtotal += $it["price"] * $it["qty"];
     }
 
     $total = $subtotal - $discount + $tax;
 
-    // Begin Transaction
     $pdo->beginTransaction();
 
     try {
-        // Insert Header
         $stmt = $pdo->prepare("
             INSERT INTO transactions (user_id, table_no, subtotal, discount_amount, tax_amount, total)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -100,47 +92,77 @@ if ($method == "POST") {
 
         $trx_id = $pdo->lastInsertId();
 
-        // Insert Items + reduce stock
         foreach ($items as $it) {
+            $line_total = $it["price"] * $it["qty"];
+            $unit_price_final = $it['price']; 
+            $base_price = $it['base_price'];
 
-            // get price
-            $stmt = $pdo->prepare("SELECT price FROM menu WHERE menu_id = ?");
-            $stmt->execute([$it["menu_id"]]);
-            $price = $stmt->fetchColumn();
-            $line = $price * $it["qty"];
-
-            // INSERT INTO transaction_items
             $stmt = $pdo->prepare("
                 INSERT INTO transaction_items (trx_id, menu_id, qty, price_at_time, line_total)
                 VALUES (?, ?, ?, ?, ?)
             ");
-            $stmt->execute([$trx_id, $it["menu_id"], $it["qty"], $price, $line]);
+            $stmt->execute([$trx_id, $it["menu_id"], $it["qty"], $unit_price_final, $line_total]);
+            $trx_item_id = $pdo->lastInsertId();
 
-            // Ambil resep bahan
+            if (!empty($it["modifiers"])) {
+                $stmt_mod = $pdo->prepare("
+                    INSERT INTO transaction_item_modifiers (trx_item_id, modifier_id, price)
+                    VALUES (?, ?, ?)
+                ");
+                foreach ($it["modifiers"] as $mod) {
+                    $stmt_mod->execute([$trx_item_id, $mod["modifier_id"], $mod["price"]]);
+                }
+            }
+
             $stmt = $pdo->prepare("
                 SELECT ingredient_id, qty_used
                 FROM menu_recipes
                 WHERE menu_id = ?
             ");
             $stmt->execute([$it["menu_id"]]);
-            $recipes = $stmt->fetchAll();
+            $recipes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Kurangi stok + buat log
             foreach ($recipes as $r) {
                 $used = $r["qty_used"] * $it["qty"];
 
-                // Kurangi stok
                 $pdo->prepare("
                     UPDATE ingredients 
                     SET stock_qty = stock_qty - ?
                     WHERE ingredient_id = ?
                 ")->execute([$used, $r["ingredient_id"]]);
 
-                // Add log
                 $pdo->prepare("
                     INSERT INTO inventory_logs (ingredient_id, change_qty, reason, related_trx_id)
                     VALUES (?, ?, 'used', ?)
                 ")->execute([$r["ingredient_id"], -$used, $trx_id]);
+            }
+            
+            if (!empty($it["modifiers"])) {
+                $stmt_mod_ing = $pdo->prepare("
+                    SELECT ingredient_id 
+                    FROM menu_modifiers
+                    WHERE modifier_id = ? AND ingredient_id IS NOT NULL
+                ");
+                
+                foreach ($it["modifiers"] as $mod) {
+                    $stmt_mod_ing->execute([$mod["modifier_id"]]);
+                    $mod_ing_id = $stmt_mod_ing->fetchColumn();
+                    
+                    if ($mod_ing_id) {
+                        $mod_used = $it["qty"];
+
+                        $pdo->prepare("
+                            UPDATE ingredients 
+                            SET stock_qty = stock_qty - ?
+                            WHERE ingredient_id = ?
+                        ")->execute([$mod_used, $mod_ing_id]);
+
+                        $pdo->prepare("
+                            INSERT INTO inventory_logs (ingredient_id, change_qty, reason, related_trx_id, note)
+                            VALUES (?, ?, 'used_modifier', ?, 'Modifier: " . $mod["modifier_id"] . "')
+                        ")->execute([$mod_ing_id, -$mod_used, $trx_id]);
+                    }
+                }
             }
         }
 
@@ -148,31 +170,16 @@ if ($method == "POST") {
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        jsonOut(false, "Failed to process order: " . $e->getMessage());
+        jsonOut(false, "Failed to process order (DB Error): " . $e->getMessage());
     }
 
-    // Return struct
     $stmt = $pdo->prepare("SELECT * FROM transactions WHERE trx_id = ?");
     $stmt->execute([$trx_id]);
     $trx = $stmt->fetch();
 
-    $stmt = $pdo->prepare("
-        SELECT ti.*, m.name
-        FROM transaction_items ti
-        JOIN menu m ON ti.menu_id = m.menu_id
-        WHERE trx_id = ?
-    ");
-    $stmt->execute([$trx_id]);
-    $items = $stmt->fetchAll();
-
-    $trx["items"] = $items;
-
-    jsonOut(true, "Transaction created", $trx);
+    jsonOut(true, "Transaction created", ["trx_id" => $trx_id, "total" => $trx['total']]);
 }
 
-// ===================================================================
-// PUT — UPDATE PAYMENT (for completing transaction)
-// ===================================================================
 if ($method == "PUT") {
     $data = json_decode(file_get_contents("php://input"), true);
     
@@ -184,7 +191,6 @@ if ($method == "PUT") {
     $payment = floatval($data["payment"]);
     $note = $data["note"] ?? null;
     
-    // Get transaction total
     $stmt = $pdo->prepare("SELECT total FROM transactions WHERE trx_id = ?");
     $stmt->execute([$trx_id]);
     $total = $stmt->fetchColumn();
@@ -193,10 +199,9 @@ if ($method == "PUT") {
     
     $change = $payment - $total;
     
-    // Update payment & change
     $stmt = $pdo->prepare("
         UPDATE transactions 
-        SET payment = ?, change_amount = ?, note = ?
+        SET payment = ?, change_amount = ?, note = ?, is_completed = 1
         WHERE trx_id = ?
     ");
     $stmt->execute([$payment, $change, $note, $trx_id]);

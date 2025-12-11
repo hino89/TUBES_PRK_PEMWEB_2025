@@ -7,7 +7,7 @@ header('Content-Type: application/json');
 $pdo = connectDB();
 
 function get($key, $default = null) {
-    return isset($_GET[$key]) ? $_GET[$key] : $default;
+    return $_GET[$key] ?? $default;
 }
 
 $start = get('start_date');
@@ -15,86 +15,110 @@ $end   = get('end_date');
 $operator = get('operator_id', 'all');
 $limit = intval(get('limit', 15));
 
-// Default date jika tidak ada param
 if (!$start || !$end) {
     $start = date('Y-m-d', strtotime('-7 days'));
-    $end = date('Y-m-d');
+    $end   = date('Y-m-d');
 }
 
-// =======================
-// 1. LOAD OPERATORS
-// =======================
-// Mengambil daftar kasir untuk filter dropdown
+/* ============================================
+   1. LOAD OPERATORS
+   ============================================ */
 $operators = $pdo->query("
-    SELECT user_id as id, username AS label, username 
+    SELECT user_id AS id, username AS label 
     FROM users
-")->fetchAll();
+")->fetchAll(PDO::FETCH_ASSOC);
 
-// =======================
-// 2. LOAD METRICS
-// =======================
-// Menggunakan tabel 'transactions' dan 'transaction_items'
+/* ============================================
+   2. METRICS (WITH OPERATOR FILTER)
+   ============================================ */
 $metricsSql = "
     SELECT 
         COALESCE(SUM(t.total), 0) AS total_revenue,
-        COUNT(*) AS total_transactions,
-        (
-            SELECT m.name 
-            FROM transaction_items ti
-            JOIN menu m ON ti.menu_id = m.menu_id
-            JOIN transactions t2 ON ti.trx_id = t2.trx_id
-            WHERE DATE(t2.datetime) BETWEEN ? AND ?
-            GROUP BY ti.menu_id
-            ORDER BY SUM(ti.qty) DESC
-            LIMIT 1
-        ) AS best_seller_name,
-        (
-            SELECT COALESCE(SUM(ti.qty), 0)
-            FROM transaction_items ti
-            JOIN transactions t3 ON ti.trx_id = t3.trx_id
-            WHERE DATE(t3.datetime) BETWEEN ? AND ?
-            GROUP BY ti.menu_id
-            ORDER BY SUM(ti.qty) DESC
-            LIMIT 1
-        ) AS best_seller_units,
-        0.40 AS profit_margin -- Hardcoded estimasi 40%
+        COUNT(*) AS total_transactions
     FROM transactions t
     WHERE DATE(t.datetime) BETWEEN ? AND ?
 ";
 
-$metricsStmt = $pdo->prepare($metricsSql);
-// Parameter harus diulang karena subquery butuh date range juga
-$metricsStmt->execute([$start, $end, $start, $end, $start, $end]);
-$metrics = $metricsStmt->fetch();
+$params = [$start, $end];
 
-// =======================
-// 3. DAILY SALES CHART
-// =======================
-$chart = $pdo->prepare("
-    SELECT DATE(datetime) AS date, SUM(total) AS value
-    FROM transactions
-    WHERE DATE(datetime) BETWEEN ? AND ?
-    GROUP BY DATE(datetime)
-    ORDER BY DATE(datetime)
-");
-$chart->execute([$start, $end]);
-$chartRows = $chart->fetchAll();
+if ($operator !== 'all') {
+    $metricsSql .= " AND t.user_id = ? ";
+    $params[] = $operator;
+}
+
+$metricsStmt = $pdo->prepare($metricsSql);
+$metricsStmt->execute($params);
+$metrics = $metricsStmt->fetch(PDO::FETCH_ASSOC);
+
+/* ============================================
+   2B. BEST SELLER FILTERED BY OPERATOR
+   ============================================ */
+$bestSql = "
+    SELECT 
+        m.name AS item_name,
+        SUM(ti.qty) AS total_qty
+    FROM transaction_items ti
+    JOIN menu m ON m.menu_id = ti.menu_id
+    JOIN transactions t ON t.trx_id = ti.trx_id
+    WHERE DATE(t.datetime) BETWEEN ? AND ?
+";
+
+$bestParams = [$start, $end];
+
+if ($operator !== 'all') {
+    $bestSql .= " AND t.user_id = ? ";
+    $bestParams[] = $operator;
+}
+
+$bestSql .= "
+    GROUP BY ti.menu_id
+    ORDER BY total_qty DESC
+    LIMIT 1
+";
+
+$best = $pdo->prepare($bestSql);
+$best->execute($bestParams);
+$bestRow = $best->fetch(PDO::FETCH_ASSOC);
+
+$metrics['best_seller_name']  = $bestRow['item_name'] ?? "-";
+$metrics['best_seller_units'] = $bestRow['total_qty'] ?? 0;
+
+/* ============================================
+   3. DAILY SALES CHART (WITH OPERATOR FILTER)
+   ============================================ */
+$chartSql = "
+    SELECT DATE(t.datetime) AS date, SUM(t.total) AS value
+    FROM transactions t
+    WHERE DATE(t.datetime) BETWEEN ? AND ?
+";
+
+$chartParams = [$start, $end];
+
+if ($operator !== 'all') {
+    $chartSql .= " AND t.user_id = ? ";
+    $chartParams[] = $operator;
+}
+
+$chartSql .= " GROUP BY DATE(t.datetime) ORDER BY date ASC ";
+
+$chart = $pdo->prepare($chartSql);
+$chart->execute($chartParams);
+$chartRows = $chart->fetchAll(PDO::FETCH_ASSOC);
 
 $daily_sales = [];
 foreach ($chartRows as $r) {
     $daily_sales[$r['date']] = intval($r['value']);
 }
 
-// =======================
-// 4. TRANSACTION HISTORY
-// =======================
-// Query kompleks dengan JOIN user dan GROUP_CONCAT item
+/* ============================================
+   4. TRANSACTION HISTORY (ALREADY CORRECT)
+   ============================================ */
 $sql = "
     SELECT 
         t.trx_id,
         t.datetime,
         t.total,
-        'PAID' as status, -- Default status karena kita belum handle void/unpaid
+        'PAID' AS status,
         u.username AS operator_username,
         (
             SELECT GROUP_CONCAT(CONCAT(ti.qty, 'x ', m.name) SEPARATOR ', ')
@@ -106,29 +130,30 @@ $sql = "
     LEFT JOIN users u ON u.user_id = t.user_id
     WHERE DATE(t.datetime) BETWEEN ? AND ?
 ";
-$params = [$start, $end];
+
+$historyParams = [$start, $end];
 
 if ($operator !== 'all') {
     $sql .= " AND t.user_id = ? ";
-    $params[] = $operator;
+    $historyParams[] = $operator;
 }
 
-$sql .= " ORDER BY t.datetime DESC LIMIT ?";
-$params[] = $limit;
+$sql .= " ORDER BY t.datetime DESC LIMIT ? ";
+$historyParams[] = $limit;
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$history = $stmt->fetchAll();
+$stmt->execute($historyParams);
+$history = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// =======================
-// FINAL OUTPUT
-// =======================
+/* ============================================
+   FINAL OUTPUT
+   ============================================ */
 echo json_encode([
     "success" => true,
     "filters" => [
         "start_date" => $start,
-        "end_date" => $end,
-        "operators" => $operators
+        "end_date"   => $end,
+        "operators"  => $operators
     ],
     "metrics" => $metrics,
     "daily_sales" => $daily_sales,

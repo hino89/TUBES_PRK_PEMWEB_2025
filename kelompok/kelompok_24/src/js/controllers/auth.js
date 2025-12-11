@@ -1,17 +1,15 @@
 /**
  * src/js/controllers/auth.js
  * Controller untuk menangani Autentikasi (Login/Logout/Session)
- * Berkomunikasi dengan api/auth.php
+ * FIX: Menggunakan window.Auth agar bisa diakses global oleh modul lain (POS/Inventory)
  */
 
-const Auth = {
-    // Base URL untuk API (Relative path dari root src/)
+window.Auth = {
+    // Base URL untuk API
     endpoint: 'api/auth.php',
 
     /**
      * Proses Login ke Server
-     * @param {string} username 
-     * @param {string} password 
      */
     async login(username, password) {
         try {
@@ -29,7 +27,7 @@ const Auth = {
                 throw new Error(result.message || 'Login gagal.');
             }
 
-            // Jika sukses, simpan data user ke LocalStorage (Seperti ID Card digital)
+            // Simpan sesi
             this.setSession(result.user_data);
             
             return { success: true };
@@ -42,7 +40,6 @@ const Auth = {
 
     /**
      * Proses Logout
-     * Hapus sesi dan tendang ke halaman login
      */
     logout() {
         localStorage.removeItem('warkops_session');
@@ -66,17 +63,19 @@ const Auth = {
     getUser() {
         const session = localStorage.getItem('warkops_session');
         if (!session) return null;
-        return JSON.parse(session).user;
+        try {
+            return JSON.parse(session).user;
+        } catch (e) {
+            return null;
+        }
     },
 
     /**
-     * Cek apakah user sudah login (Auth Guard)
-     * Dipasang di Dashboard agar tidak bisa ditembus tanpa login
+     * Auth Guard (Untuk Dashboard)
      */
     requireAuth() {
         const user = this.getUser();
         if (!user) {
-            // Jika tidak ada sesi, tendang ke login
             window.location.href = 'index.html';
             return false;
         }
@@ -84,13 +83,11 @@ const Auth = {
     },
 
     /**
-     * Cek apakah user sudah login (Guest Guard)
-     * Dipasang di Halaman Login agar tidak perlu login ulang jika belum logout
+     * Guest Guard (Untuk Login Page)
      */
     requireGuest() {
         const user = this.getUser();
         if (user) {
-            // Jika sudah login, langsung lempar ke dashboard
             window.location.href = 'dashboard.html';
         }
     }
